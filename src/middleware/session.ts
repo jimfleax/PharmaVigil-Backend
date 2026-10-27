@@ -8,17 +8,39 @@ import { MembershipRepository } from '../repositories/membership.repository.js';
 import { verifySessionSecret } from '../domain/auth/index.js';
 
 export const sessionMiddleware = createMiddleware<{ Variables: AppVariables }>(async (c, next) => {
-  const rawCookie = c.req.header('Cookie');
-  if (!rawCookie) {
+  let cookieValue = '';
+
+  // 1. Authorization: Bearer <sessionId>.<secret>
+  const authHeader = c.req.header('Authorization');
+  if (authHeader && /^Bearer\s+/i.test(authHeader)) {
+    cookieValue = authHeader.replace(/^Bearer\s+/i, '').trim();
+  }
+
+  // 2. x-session-token: <sessionId>.<secret>
+  if (!cookieValue) {
+    const customHeader = c.req.header('x-session-token');
+    if (customHeader) {
+      cookieValue = customHeader.trim();
+    }
+  }
+
+  // 3. Cookie header (__Host-vf_session or vf_session)
+  if (!cookieValue) {
+    const rawCookie = c.req.header('Cookie');
+    if (rawCookie) {
+      const cookieMatch =
+        rawCookie.match(new RegExp(`${env.SESSION_COOKIE_NAME}=([^;]+)`)) ||
+        rawCookie.match(/vf_session=([^;]+)/);
+      if (cookieMatch && cookieMatch[1]) {
+        cookieValue = cookieMatch[1].trim();
+      }
+    }
+  }
+
+  if (!cookieValue) {
     return next();
   }
 
-  const cookieMatch = rawCookie.match(new RegExp(`${env.SESSION_COOKIE_NAME}=([^;]+)`));
-  if (!cookieMatch || !cookieMatch[1]) {
-    return next();
-  }
-
-  const cookieValue = cookieMatch[1];
   const parts = cookieValue.split('.');
   if (parts.length !== 2) {
     return next();

@@ -45,9 +45,17 @@ authRoutes.post('/login', zValidator('json', LoginRequestSchema), async (c) => {
 
   c.header('Set-Cookie', cookieFlags);
 
+  // In development, also set vf_session for browsers that strictly require Secure for __Host-
+  if (!isProd) {
+    const devCookie = `vf_session=${result.cookieValue}; HttpOnly; Path=/; Max-Age=${result.maxAgeSeconds}; SameSite=Lax`;
+    c.header('Set-Cookie', devCookie);
+  }
+
   return c.json({
     user: result.user,
     memberships: result.memberships,
+    token: result.cookieValue,
+    sessionToken: result.cookieValue,
   });
 });
 
@@ -82,16 +90,33 @@ authRoutes.post('/logout', requireAuth, async (c) => {
   const membership = c.get('membership');
   const requestId = c.get('requestId');
 
-  const rawCookie = c.req.header('Cookie') || '';
-  const match = rawCookie.match(new RegExp(`${env.SESSION_COOKIE_NAME}=([^;]+)`));
-  const sessionId = match && match[1] ? match[1].split('.')[0] : '';
+  // Extract session token from Bearer, header, or cookie
+  let rawToken = '';
+  const authHeader = c.req.header('Authorization');
+  if (authHeader && /^Bearer\s+/i.test(authHeader)) {
+    rawToken = authHeader.replace(/^Bearer\s+/i, '').trim();
+  }
+  if (!rawToken) {
+    rawToken = c.req.header('x-session-token') || '';
+  }
+  if (!rawToken) {
+    const rawCookie = c.req.header('Cookie') || '';
+    const match =
+      rawCookie.match(new RegExp(`${env.SESSION_COOKIE_NAME}=([^;]+)`)) ||
+      rawCookie.match(/vf_session=([^;]+)/);
+    if (match && match[1]) {
+      rawToken = match[1].trim();
+    }
+  }
+
+  const sessionId = rawToken ? rawToken.split('.')[0] : '';
 
   if (sessionId) {
     const service = new AuthService(getDatabase());
     await service.logout(sessionId, membership?.hospitalId || 'GLOBAL', user.userId, requestId);
   }
 
-  // Clear cookie
+  // Clear cookies
   c.header(
     'Set-Cookie',
     `${env.SESSION_COOKIE_NAME}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly`,

@@ -57,6 +57,7 @@ export function createApp(): Hono<{ Variables: AppVariables }> {
         'Cookie',
         'x-request-id',
         'x-hospital-id',
+        'x-session-token',
         'Idempotency-Key',
         'If-Match',
       ],
