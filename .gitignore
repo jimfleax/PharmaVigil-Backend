@@ -36,3 +36,6 @@ Thumbs.db
 uploads/
 tmp/
 .temp/
+
+# Scratch directory for temporary scripts, debug logs, and plannings
+scratch/
