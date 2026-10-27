@@ -1,0 +1,21 @@
+{
+  "project": "VentureForge Medication Safety Platform",
+  "documentation_version": "0.1.0-draft",
+  "prepared_date": "2026-10-27",
+  "artifact_type": "documentation pack, not application source code",
+  "synthetic_data_only": true,
+  "clinical_rule_status": "illustrative unless independently reviewed and approved",
+  "repositories": {
+    "frontend": "medication-safety-frontend",
+    "backend": "medication-safety-backend"
+  },
+  "canonical_openapi_owner": "medication-safety-backend",
+  "openapi_path": "04-contracts/openapi.yaml",
+  "implementation_tiers": [
+    "DAY_ONE_REQUIRED",
+    "MOCKED_FOR_DEMO",
+    "SPECIFIED_DEFERRED"
+  ],
+  "package_role": "backend",
+  "contains_counterpart_prd_for_integration_context": true
+}

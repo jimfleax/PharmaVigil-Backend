@@ -1,0 +1,1435 @@
+openapi: 3.1.1
+info:
+  title: VentureForge Medication Safety Prototype API
+  version: 0.1.0
+  description: >
+    Synthetic-data demonstration API. Not for clinical use. Illustrative rules
+    are not validated; no-match is not a safety clearance.
+servers:
+  - url: https://api.example.invalid/api/v1
+    description: Placeholder; replace after deployment is selected.
+  - url: http://localhost:8787/api/v1
+    description: Local development example.
+security:
+  - SessionCookie: []
+tags:
+  - name: Health
+  - name: Auth
+  - name: Memberships
+  - name: Patients
+  - name: Catalogue
+  - name: Captures
+  - name: Prescriptions
+  - name: Checks
+  - name: Alerts
+  - name: Dispensing
+  - name: Orders
+  - name: Appointments
+  - name: Notifications
+  - name: Audit
+  - name: Rules
+  - name: Demo
+paths:
+  /health/live:
+    get:
+      operationId: getLiveness
+      tags: [Health]
+      security: []
+      responses:
+        "200":
+          description: Process is running.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HealthResponse" }
+  /health/ready:
+    get:
+      operationId: getReadiness
+      tags: [Health]
+      security: []
+      responses:
+        "200":
+          description: Essential dependencies ready.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HealthResponse" }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+  /auth/register:
+    post:
+      operationId: registerUser
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegisterRequest" }
+      responses:
+        "201":
+          description: Account created; requested membership may remain pending.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RegisterResponse" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /auth/login:
+    post:
+      operationId: login
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginRequest" }
+      responses:
+        "200":
+          description: Login success; opaque session cookie set.
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+              description: HttpOnly Secure session cookie; value must not be exposed to JS.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CurrentUserResponse" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      tags: [Auth]
+      responses:
+        "200":
+          description: Current user and membership list.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CurrentUserResponse" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [Auth]
+      responses:
+        "204": { description: Session revoked and cookie cleared. }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+  /auth/invitations/accept:
+    post:
+      operationId: acceptInvitation
+      tags: [Auth]
+      description: Deferred unless explicitly promoted to day-one scope.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties: { token: { type: string, minLength: 16 } }
+      responses:
+        "200": { description: Invitation accepted; membership still follows approval policy. }
+        "422": { $ref: "#/components/responses/ValidationError" }
+  /auth/password/forgot:
+    post:
+      operationId: requestPasswordReset
+      tags: [Auth]
+      security: []
+      description: Deferred. Response must not reveal whether an account exists.
+      responses:
+        "202": { description: Request accepted if applicable. }
+  /auth/password/reset:
+    post:
+      operationId: resetPassword
+      tags: [Auth]
+      security: []
+      description: Deferred; single-use reset token required.
+      responses:
+        "204": { description: Password reset. }
+  /hospitals/current:
+    get:
+      operationId: getCurrentHospital
+      tags: [Memberships]
+      responses:
+        "200":
+          description: Current authorized hospital.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hospital" }
+  /memberships:
+    get:
+      operationId: listMemberships
+      tags: [Memberships]
+      parameters:
+        - $ref: "#/components/parameters/StatusQuery"
+        - $ref: "#/components/parameters/CursorQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          description: Memberships in authorized hospital; admin only for other users.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MembershipList" }
+    post:
+      operationId: requestMembership
+      tags: [Memberships]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MembershipRequest" }
+      responses:
+        "201":
+          description: Pending membership request.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MembershipEnvelope" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /memberships/{membershipId}/approve:
+    post:
+      operationId: approveMembership
+      tags: [Memberships]
+      parameters:
+        - $ref: "#/components/parameters/MembershipId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ApproveMembershipRequest" }
+      responses:
+        "200":
+          description: Membership approved and role assigned by authorized administrator.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MembershipEnvelope" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /memberships/{membershipId}/reject:
+    post:
+      operationId: rejectMembership
+      tags: [Memberships]
+      parameters:
+        - $ref: "#/components/parameters/MembershipId"
+      responses:
+        "200": { description: Membership rejected. }
+  /memberships/{membershipId}/suspend:
+    post:
+      operationId: suspendMembership
+      tags: [Memberships]
+      parameters:
+        - $ref: "#/components/parameters/MembershipId"
+      responses:
+        "200": { description: Membership suspended/revoked; active requests immediately denied. }
+  /users:
+    get:
+      operationId: listHospitalUsers
+      tags: [Memberships]
+      responses:
+        "200":
+          description: Hospital-scoped user list; admin only.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/UserSummary" }
+  /patients/search:
+    get:
+      operationId: searchPatients
+      tags: [Patients]
+      parameters:
+        - name: hospitalPatientId
+          in: query
+          required: true
+          schema: { type: string, minLength: 3, maxLength: 64 }
+      responses:
+        "200":
+          description: Synthetic patient candidates in authorized hospital.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/PatientSummary" }
+  /patients/{patientId}:
+    get:
+      operationId: getPatient
+      tags: [Patients]
+      parameters:
+        - $ref: "#/components/parameters/PatientId"
+      responses:
+        "200":
+          description: Patient summary for authorized staff.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PatientSummary" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /patients/{patientId}/confirm-link:
+    post:
+      operationId: confirmPatientLink
+      tags: [Patients]
+      parameters:
+        - $ref: "#/components/parameters/PatientId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [confirmationPhrase]
+              properties:
+                confirmationPhrase: { type: string, minLength: 1, maxLength: 120 }
+      responses:
+        "200":
+          description: Link confirmed after server-side identity checks.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PatientSummary" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /patient/me/summary:
+    get:
+      operationId: getOwnPatientSummary
+      tags: [Patients]
+      responses:
+        "200":
+          description: Linked patient's own summary only.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PatientSummary" }
+  /patient/me/prescriptions:
+    get:
+      operationId: listOwnPrescriptions
+      tags: [Patients, Prescriptions]
+      responses:
+        "200":
+          description: Patient-visible own prescriptions only.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PrescriptionList" }
+  /patient/me/history:
+    get:
+      operationId: getOwnHistory
+      tags: [Patients]
+      responses:
+        "200":
+          description: Patient-visible history; excludes staff-only notes/audit.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { data: { type: array, items: { type: object } } }
+  /medicine-catalogue/search:
+    get:
+      operationId: searchMedicineCatalogue
+      tags: [Catalogue]
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema: { type: string, minLength: 2, maxLength: 120 }
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          description: Candidates only; no clinical inference implied.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/MedicineCandidate" }
+  /medicine-catalogue/{itemId}:
+    get:
+      operationId: getMedicineCatalogueItem
+      tags: [Catalogue]
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Catalogue item and ingredient mapping.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MedicineCandidate" }
+  /patients/{patientId}/medication-history:
+    get:
+      operationId: getMedicationHistory
+      tags: [Patients]
+      parameters:
+        - $ref: "#/components/parameters/PatientId"
+      responses:
+        "200":
+          description: Source/verification-aware medication profile.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { data: { type: array, items: { type: object } } }
+    post:
+      operationId: addMedicationHistory
+      tags: [Patients]
+      description: Deferred unless promoted; reported/verified source must be explicit.
+      parameters:
+        - $ref: "#/components/parameters/PatientId"
+      responses:
+        "201": { description: Medication history entry created. }
+  /patients/{patientId}/allergies:
+    get:
+      operationId: getAllergies
+      tags: [Patients]
+      parameters:
+        - $ref: "#/components/parameters/PatientId"
+      responses:
+        "200":
+          description: Confirmed and reported allergy/adverse-reaction entries.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { data: { type: array, items: { type: object } } }
+    post:
+      operationId: addAllergy
+      tags: [Patients]
+      description: Deferred unless promoted; source and verification status required.
+      parameters:
+        - $ref: "#/components/parameters/PatientId"
+      responses:
+        "201": { description: Allergy/reaction entry created. }
+  /prescription-captures:
+    post:
+      operationId: createPrescriptionCapture
+      tags: [Captures]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [patientId, captureMode]
+              properties:
+                patientId: { type: string }
+                captureMode: { type: string, enum: [BROWSER_OCR, MANUAL_ENTRY, SEEDED_IMAGE] }
+                ocrLanguage: { type: string, enum: [eng], default: eng }
+                extractedText: { type: string, maxLength: 20000 }
+      responses:
+        "201":
+          description: Unconfirmed capture draft.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CaptureEnvelope" }
+  /prescription-captures/{captureId}:
+    get:
+      operationId: getPrescriptionCapture
+      tags: [Captures]
+      parameters:
+        - $ref: "#/components/parameters/CaptureId"
+      responses:
+        "200":
+          description: Capture draft.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CaptureEnvelope" }
+    patch:
+      operationId: updatePrescriptionCapture
+      tags: [Captures]
+      parameters:
+        - $ref: "#/components/parameters/CaptureId"
+        - $ref: "#/components/parameters/IfMatch"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CaptureUpdate" }
+      responses:
+        "200":
+          description: Updated but unconfirmed capture.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CaptureEnvelope" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /prescription-captures/{captureId}/confirm:
+    post:
+      operationId: confirmPrescriptionCapture
+      tags: [Captures]
+      parameters:
+        - $ref: "#/components/parameters/CaptureId"
+        - $ref: "#/components/parameters/IfMatch"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [patientConfirmed, items]
+              properties:
+                patientConfirmed: { type: boolean, const: true }
+                items:
+                  type: array
+                  minItems: 1
+                  items: { $ref: "#/components/schemas/PrescriptionItem" }
+      responses:
+        "200":
+          description: Pharmacist-confirmed capture; unresolved matches rejected.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CaptureEnvelope" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /prescriptions:
+    get:
+      operationId: listPrescriptions
+      tags: [Prescriptions]
+      parameters:
+        - name: patientId
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string }
+        - $ref: "#/components/parameters/CursorQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          description: Authorized prescription list.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PrescriptionList" }
+    post:
+      operationId: createPrescription
+      tags: [Prescriptions]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreatePrescription" }
+      responses:
+        "201":
+          description: Prescription with first immutable revision.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PrescriptionEnvelope" }
+  /prescriptions/{prescriptionId}:
+    get:
+      operationId: getPrescription
+      tags: [Prescriptions]
+      parameters:
+        - $ref: "#/components/parameters/PrescriptionId"
+      responses:
+        "200":
+          description: Current prescription and revision reference.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PrescriptionEnvelope" }
+  /prescriptions/{prescriptionId}/revisions:
+    get:
+      operationId: listPrescriptionRevisions
+      tags: [Prescriptions]
+      parameters:
+        - $ref: "#/components/parameters/PrescriptionId"
+      responses:
+        "200":
+          description: Immutable revision chain.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/PrescriptionRevision" }
+    post:
+      operationId: createPrescriptionRevision
+      tags: [Prescriptions]
+      parameters:
+        - $ref: "#/components/parameters/PrescriptionId"
+        - $ref: "#/components/parameters/IfMatch"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateRevision" }
+      responses:
+        "201":
+          description: New immutable revision; old revision remains.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PrescriptionEnvelope" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /checks:
+    post:
+      operationId: createCheck
+      tags: [Checks]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateCheck" }
+      responses:
+        "201":
+          description: Deterministic result; no result certifies safety.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CheckEnvelope" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+  /checks/{checkId}:
+    get:
+      operationId: getCheck
+      tags: [Checks]
+      parameters:
+        - $ref: "#/components/parameters/CheckId"
+      responses:
+        "200":
+          description: Outcome, coverage, alerts, evidence, rule version.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CheckEnvelope" }
+  /checks/{checkId}/retry:
+    post:
+      operationId: retryCheck
+      tags: [Checks]
+      parameters:
+        - $ref: "#/components/parameters/CheckId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "201":
+          description: New attempt linked to prior attempt.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CheckEnvelope" }
+  /alerts:
+    get:
+      operationId: listAlerts
+      tags: [Alerts]
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: assignedToMe
+          in: query
+          schema: { type: boolean, default: false }
+        - $ref: "#/components/parameters/CursorQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          description: Hospital-scoped alert queue.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AlertList" }
+  /alerts/{alertId}:
+    get:
+      operationId: getAlert
+      tags: [Alerts]
+      parameters:
+        - $ref: "#/components/parameters/AlertId"
+      responses:
+        "200":
+          description: Alert evidence and current state.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AlertEnvelope" }
+  /alerts/{alertId}/acknowledge:
+    post:
+      operationId: acknowledgeAlert
+      tags: [Alerts]
+      parameters:
+        - $ref: "#/components/parameters/AlertId"
+        - $ref: "#/components/parameters/IfMatch"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          description: Doctor acknowledges alert.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AlertEnvelope" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /alerts/{alertId}/disposition:
+    post:
+      operationId: recordAlertDisposition
+      tags: [Alerts]
+      parameters:
+        - $ref: "#/components/parameters/AlertId"
+        - $ref: "#/components/parameters/IfMatch"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AlertDisposition" }
+      responses:
+        "201":
+          description: Immutable doctor disposition.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AlertEnvelope" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+  /alerts/{alertId}/resolve:
+    post:
+      operationId: resolveAlert
+      tags: [Alerts]
+      description: Only permitted doctor transition; resolution does not itself authorize dispensing.
+      parameters:
+        - $ref: "#/components/parameters/AlertId"
+        - $ref: "#/components/parameters/IfMatch"
+      responses:
+        "200":
+          description: Alert resolved where workflow permits.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AlertEnvelope" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /dispensing-authorizations:
+    post:
+      operationId: createDispensingAuthorization
+      tags: [Dispensing]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DispensingAuthorizationRequest" }
+      responses:
+        "201":
+          description: Workflow authorization after server-side gates; not a safety certification.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DispensingAuthorizationResponse" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+  /medication-orders:
+    get:
+      operationId: listMedicationOrders
+      tags: [Orders]
+      description: Inpatient order workflow may be deferred.
+      responses:
+        "200":
+          description: Hospital-scoped inpatient orders.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { data: { type: array, items: { type: object } } }
+    post:
+      operationId: createMedicationOrder
+      tags: [Orders]
+      description: Inpatient new order; tier may be deferred.
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "201": { description: Inpatient order created with version 1. }
+  /medication-orders/{orderId}:
+    get:
+      operationId: getMedicationOrder
+      tags: [Orders]
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Order and version history. }
+  /medication-orders/{orderId}/versions:
+    post:
+      operationId: createMedicationOrderVersion
+      tags: [Orders]
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/IfMatch"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "201": { description: Immutable changed order version. }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /appointments:
+    get:
+      operationId: listAppointments
+      tags: [Appointments]
+      parameters:
+        - name: from
+          in: query
+          schema: { type: string, format: date-time }
+        - name: to
+          in: query
+          schema: { type: string, format: date-time }
+      responses:
+        "200":
+          description: Authorized appointment list.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { data: { type: array, items: { $ref: "#/components/schemas/Appointment" } } }
+    post:
+      operationId: createAppointment
+      tags: [Appointments]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateAppointment" }
+      responses:
+        "201":
+          description: Appointment booked if slot conflict check passes.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Appointment" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /appointments/{appointmentId}/cancel:
+    post:
+      operationId: cancelAppointment
+      tags: [Appointments]
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/IfMatch"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          description: Appointment cancelled.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Appointment" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [Notifications]
+      responses:
+        "200":
+          description: Current user's notifications.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { data: { type: array, items: { $ref: "#/components/schemas/Notification" } } }
+  /notifications/{notificationId}/read:
+    post:
+      operationId: markNotificationRead
+      tags: [Notifications]
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "204": { description: Marked read. }
+  /audit-events:
+    get:
+      operationId: listAuditEvents
+      tags: [Audit]
+      description: Deferred read-only audit search; no mutation operation is exposed.
+      parameters:
+        - $ref: "#/components/parameters/CursorQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          description: Authorized audit events.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { data: { type: array, items: { type: object } } }
+  /rule-sets/current:
+    get:
+      operationId: getCurrentRuleSet
+      tags: [Rules]
+      responses:
+        "200":
+          description: Current ruleset metadata and limitations.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RuleSetMetadata" }
+  /rule-sets:
+    get:
+      operationId: listRuleSets
+      tags: [Rules]
+      description: Deferred rule governance interface/API.
+      responses:
+        "200": { description: Rule-set version list. }
+    post:
+      operationId: createRuleSetDraft
+      tags: [Rules]
+      description: Deferred; authoring requires governance controls.
+      responses:
+        "201": { description: Draft created. }
+  /rule-sets/{ruleSetId}/submit-review:
+    post:
+      operationId: submitRuleSetForReview
+      tags: [Rules]
+      parameters:
+        - name: ruleSetId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Draft submitted for review. }
+  /rule-sets/{ruleSetId}/approve:
+    post:
+      operationId: approveRuleSet
+      tags: [Rules]
+      description: Only qualified clinical reviewer; deferred.
+      parameters:
+        - name: ruleSetId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Review decision recorded. }
+  /rule-sets/{ruleSetId}/publish:
+    post:
+      operationId: publishRuleSet
+      tags: [Rules]
+      description: Publish immutable approved version; deferred.
+      parameters:
+        - name: ruleSetId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Immutable ruleset published. }
+  /demo/reset:
+    post:
+      operationId: resetDemoWorkspace
+      tags: [Demo]
+      description: Restricted to a designated synthetic workspace; disabled by default outside demo deployment.
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [confirmation, workspaceId]
+              properties:
+                confirmation: { type: string, const: RESET_SYNTHETIC_DEMO }
+                workspaceId: { type: string }
+      responses:
+        "202": { description: Scoped reset accepted and audited. }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /demo/seed:
+    post:
+      operationId: seedDemoFixtures
+      tags: [Demo]
+      description: Developer/demo-only fixture seeding; never unrestricted public.
+      responses:
+        "202": { description: Seed operation accepted. }
+components:
+  securitySchemes:
+    SessionCookie:
+      type: apiKey
+      in: cookie
+      name: __Host-vf_session
+  parameters:
+    PatientId:
+      name: patientId
+      in: path
+      required: true
+      schema: { type: string }
+    CaptureId:
+      name: captureId
+      in: path
+      required: true
+      schema: { type: string }
+    PrescriptionId:
+      name: prescriptionId
+      in: path
+      required: true
+      schema: { type: string }
+    CheckId:
+      name: checkId
+      in: path
+      required: true
+      schema: { type: string }
+    AlertId:
+      name: alertId
+      in: path
+      required: true
+      schema: { type: string }
+    MembershipId:
+      name: membershipId
+      in: path
+      required: true
+      schema: { type: string }
+    StatusQuery:
+      name: status
+      in: query
+      schema: { type: string }
+    CursorQuery:
+      name: cursor
+      in: query
+      schema: { type: string }
+    LimitQuery:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    IfMatch:
+      name: If-Match
+      in: header
+      required: true
+      schema: { type: string }
+      description: Expected ETag/version for optimistic concurrency.
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, minLength: 16, maxLength: 128 }
+  responses:
+    ValidationError:
+      description: Input/state validation failed.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+    Unauthenticated:
+      description: Authentication required or invalid.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+    Forbidden:
+      description: Action is not authorized.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+    NotFound:
+      description: Resource not found in authorized scope.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+    Conflict:
+      description: Stale write, invalid transition, or idempotency conflict.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+    RateLimited:
+      description: Request rate limit exceeded.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+    ServiceUnavailable:
+      description: Dependency unavailable; workflow remains incomplete.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+  schemas:
+    HealthResponse:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [ok, degraded] }
+        timestamp: { type: string, format: date-time }
+    RegisterRequest:
+      type: object
+      required: [email, password, displayName, hospitalSlug, requestedRole]
+      properties:
+        email: { type: string, format: email, maxLength: 254 }
+        password: { type: string, minLength: 12, maxLength: 128, writeOnly: true }
+        displayName: { type: string, minLength: 1, maxLength: 120 }
+        hospitalSlug: { type: string, minLength: 2, maxLength: 80 }
+        requestedRole: { type: string, enum: [PATIENT, DOCTOR, PHARMACIST, HOSPITAL_ADMIN] }
+        syntheticHospitalPatientId: { type: string, maxLength: 64 }
+    RegisterResponse:
+      type: object
+      required: [userId, accountStatus, membershipStatus, message]
+      properties:
+        userId: { type: string }
+        accountStatus: { type: string, enum: [ACTIVE, PENDING] }
+        membershipStatus: { type: string, enum: [PENDING, ACTIVE, NOT_REQUESTED] }
+        message: { type: string }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, writeOnly: true }
+    CurrentUserResponse:
+      type: object
+      required: [user, memberships]
+      properties:
+        user:
+          type: object
+          required: [id, displayName, accountStatus]
+          properties:
+            id: { type: string }
+            displayName: { type: string }
+            accountStatus: { type: string }
+        memberships:
+          type: array
+          items: { $ref: "#/components/schemas/Membership" }
+    MembershipRequest:
+      type: object
+      required: [hospitalSlug, requestedRole]
+      properties:
+        hospitalSlug: { type: string }
+        requestedRole: { type: string, enum: [PATIENT, DOCTOR, PHARMACIST, HOSPITAL_ADMIN] }
+    ApproveMembershipRequest:
+      type: object
+      required: [assignedRole, expectedVersion]
+      properties:
+        assignedRole: { type: string, enum: [PATIENT, DOCTOR, PHARMACIST, HOSPITAL_ADMIN] }
+        expectedVersion: { type: integer, minimum: 0 }
+        reason: { type: string, maxLength: 500 }
+    Membership:
+      type: object
+      required: [id, hospitalId, userId, status, version]
+      properties:
+        id: { type: string }
+        hospitalId: { type: string }
+        userId: { type: string }
+        requestedRole: { type: string }
+        assignedRole: { type: string }
+        status: { type: string, enum: [PENDING, ACTIVE, REJECTED, SUSPENDED, REVOKED] }
+        version: { type: integer }
+    MembershipEnvelope:
+      type: object
+      required: [data]
+      properties: { data: { $ref: "#/components/schemas/Membership" } }
+    MembershipList:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/Membership" }
+        nextCursor: { type: [string, "null"] }
+    Hospital:
+      type: object
+      required: [id, slug, status]
+      properties:
+        id: { type: string }
+        slug: { type: string }
+        name: { type: string }
+        status: { type: string }
+    UserSummary:
+      type: object
+      required: [id, displayName]
+      properties:
+        id: { type: string }
+        displayName: { type: string }
+        email: { type: string, format: email }
+        membershipStatus: { type: string }
+        assignedRole: { type: string }
+    PatientSummary:
+      type: object
+      required: [id, syntheticHospitalPatientId, linkStatus]
+      properties:
+        id: { type: string }
+        syntheticHospitalPatientId: { type: string }
+        displayName: { type: string }
+        linkStatus: { type: string, enum: [UNLINKED, PENDING_CONFIRMATION, LINKED, REVIEW_REQUIRED] }
+        version: { type: integer }
+    MedicineCandidate:
+      type: object
+      required: [id, canonicalIngredientIds, productType, matchStatus]
+      properties:
+        id: { type: string }
+        displayName: { type: string }
+        canonicalIngredientIds:
+          type: array
+          items: { type: string }
+        productType: { type: string, enum: [SINGLE_INGREDIENT, COMBINATION] }
+        strengths:
+          type: array
+          items:
+            type: object
+            properties:
+              value: { type: number }
+              unit: { type: string }
+        dosageForms:
+          type: array
+          items: { type: string }
+        matchStatus: { type: string, enum: [CANDIDATE, AMBIGUOUS, UNSUPPORTED] }
+    PrescriptionItem:
+      type: object
+      required: [rawExtractedText, canonicalIngredientIds, matchStatus]
+      properties:
+        rawExtractedText: { type: string, maxLength: 500 }
+        catalogueItemId: { type: [string, "null"] }
+        canonicalIngredientIds:
+          type: array
+          items: { type: string }
+        brandText: { type: [string, "null"] }
+        strengthValue: { type: [number, "null"] }
+        strengthUnit: { type: [string, "null"] }
+        dosageForm: { type: [string, "null"] }
+        doseValue: { type: [number, "null"] }
+        doseUnit: { type: [string, "null"] }
+        route: { type: [string, "null"] }
+        frequency: { type: [string, "null"] }
+        durationValue: { type: [number, "null"] }
+        durationUnit: { type: [string, "null"] }
+        matchStatus: { type: string, enum: [CONFIRMED, AMBIGUOUS, UNSUPPORTED, UNRESOLVED] }
+        matchConfidence: { type: [number, "null"], minimum: 0, maximum: 1 }
+    CaptureUpdate:
+      type: object
+      properties:
+        extractedText: { type: string, maxLength: 20000 }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/PrescriptionItem" }
+    CaptureEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [id, patientId, status, version]
+          properties:
+            id: { type: string }
+            patientId: { type: string }
+            status: { type: string, enum: [UPLOADED, OCR_COMPLETE, MANUAL_ENTRY, CONFIRMED, FAILED, EXPIRED] }
+            extractedText: { type: string }
+            ocrConfidence: { type: [number, "null"], minimum: 0, maximum: 1 }
+            version: { type: integer }
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/PrescriptionItem" }
+    CreatePrescription:
+      type: object
+      required: [patientId, items]
+      properties:
+        patientId: { type: string }
+        items:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/PrescriptionItem" }
+    CreateRevision:
+      type: object
+      required: [items, changeReason, expectedVersion]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/PrescriptionItem" }
+        changeReason: { type: string, minLength: 3, maxLength: 1000 }
+        expectedVersion: { type: integer }
+    PrescriptionRevision:
+      type: object
+      required: [id, revisionNumber, createdAt, items]
+      properties:
+        id: { type: string }
+        revisionNumber: { type: integer }
+        createdAt: { type: string, format: date-time }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/PrescriptionItem" }
+    PrescriptionEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [id, patientId, currentRevisionId, status, version]
+          properties:
+            id: { type: string }
+            patientId: { type: string }
+            currentRevisionId: { type: string }
+            status: { type: string }
+            version: { type: integer }
+    PrescriptionList:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/PrescriptionEnvelope" }
+    CreateCheck:
+      type: object
+      required: [subjectType, subjectId, subjectVersion]
+      properties:
+        subjectType: { type: string, enum: [PRESCRIPTION_REVISION, MEDICATION_ORDER_VERSION] }
+        subjectId: { type: string }
+        subjectVersion: { type: integer }
+    CoverageCategory:
+      type: object
+      required: [status, limitation]
+      properties:
+        status:
+          type: string
+          enum: [EVALUATED_WITH_MATCHES, NO_MATCHING_SEEDED_RULE, INCOMPLETE, UNSUPPORTED, NOT_EVALUATED, FAILED]
+        limitation: { type: string }
+        evaluatedInputsCount: { type: integer, minimum: 0 }
+        unsupportedInputsCount: { type: integer, minimum: 0 }
+    EvidenceReference:
+      type: object
+      required: [sourceId, title, licenseStatus]
+      properties:
+        sourceId: { type: string }
+        title: { type: string }
+        publisher: { type: string }
+        url: { type: string, format: uri }
+        locator: { type: string }
+        accessedAt: { type: string, format: date }
+        licenseStatus: { type: string, enum: [VERIFIED, RESTRICTED, PERMISSION_REQUIRED, UNVERIFIED, ORIGINAL_ILLUSTRATIVE] }
+        evidenceStrength: { type: string, enum: [NOT_ASSESSED, LOW, MODERATE, HIGH] }
+    AlertSummary:
+      type: object
+      required: [id, ruleId, ruleVersion, severity, status, rationale, limitations]
+      properties:
+        id: { type: string }
+        ruleId: { type: string }
+        ruleVersion: { type: integer }
+        severity: { type: string, enum: [INFO, LOW, MODERATE, HIGH, CRITICAL] }
+        status: { type: string, enum: [OPEN, ACKNOWLEDGED, UNDER_REVIEW, CHANGE_REQUIRED, CLINICAL_DISPOSITION_RECORDED, RESOLVED] }
+        rationale: { type: string }
+        limitations:
+          type: array
+          items: { type: string }
+        evidenceReferences:
+          type: array
+          items: { $ref: "#/components/schemas/EvidenceReference" }
+    CheckEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [id, outcome, ruleSetVersion, coverageByCategory, alerts, limitations, subjectId, subjectVersion]
+          properties:
+            id: { type: string }
+            outcome: { type: string, enum: [FLAGGED, NO_MATCHING_RULE, INCOMPLETE, UNSUPPORTED, FAILED] }
+            ruleSetVersion: { type: string }
+            coverageByCategory:
+              type: object
+              properties:
+                drugDrug: { $ref: "#/components/schemas/CoverageCategory" }
+                foodDrink: { $ref: "#/components/schemas/CoverageCategory" }
+                allergy: { $ref: "#/components/schemas/CoverageCategory" }
+                adverseReaction: { $ref: "#/components/schemas/CoverageCategory" }
+            alerts:
+              type: array
+              items: { $ref: "#/components/schemas/AlertSummary" }
+            limitations:
+              type: array
+              items: { type: string }
+            subjectId: { type: string }
+            subjectVersion: { type: integer }
+            createdAt: { type: string, format: date-time }
+            requestId: { type: string }
+    AlertList:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/AlertSummary" }
+    AlertEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          allOf:
+            - $ref: "#/components/schemas/AlertSummary"
+            - type: object
+              properties:
+                version: { type: integer }
+                patientId: { type: string }
+                subjectId: { type: string }
+    AlertDisposition:
+      type: object
+      required: [dispositionType, rationale]
+      properties:
+        dispositionType: { type: string, enum: [CHANGE_REQUIRED, CLINICALLY_REVIEWED, OTHER_DOCUMENTED] }
+        rationale: { type: string, minLength: 3, maxLength: 2000 }
+    DispensingAuthorizationRequest:
+      type: object
+      required: [prescriptionId, prescriptionRevisionId, checkRunId, expectedVersion, acknowledgement]
+      properties:
+        prescriptionId: { type: string }
+        prescriptionRevisionId: { type: string }
+        checkRunId: { type: string }
+        expectedVersion: { type: integer }
+        acknowledgement: { type: string, const: WORKFLOW_REQUIREMENTS_REVIEWED }
+    DispensingAuthorizationResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [id, authorizedAt, prescriptionRevisionId, checkRunId]
+          properties:
+            id: { type: string }
+            authorizedAt: { type: string, format: date-time }
+            prescriptionRevisionId: { type: string }
+            checkRunId: { type: string }
+            message: { type: string }
+    CreateAppointment:
+      type: object
+      required: [patientId, doctorUserId, startAt, endAt]
+      properties:
+        patientId: { type: string }
+        doctorUserId: { type: string }
+        startAt: { type: string, format: date-time }
+        endAt: { type: string, format: date-time }
+    Appointment:
+      type: object
+      required: [id, patientId, doctorUserId, startAt, endAt, status, version]
+      properties:
+        id: { type: string }
+        patientId: { type: string }
+        doctorUserId: { type: string }
+        startAt: { type: string, format: date-time }
+        endAt: { type: string, format: date-time }
+        status: { type: string, enum: [BOOKED, CANCELLED, COMPLETED] }
+        version: { type: integer }
+    Notification:
+      type: object
+      required: [id, type, createdAt, read]
+      properties:
+        id: { type: string }
+        type: { type: string }
+        subjectId: { type: string }
+        createdAt: { type: string, format: date-time }
+        read: { type: boolean }
+    RuleSetMetadata:
+      type: object
+      required: [version, status, isClinicallyValidated, limitations]
+      properties:
+        version: { type: string }
+        status: { type: string, enum: [ILLUSTRATIVE_NOT_VALIDATED, APPROVED, PUBLISHED, RETIRED] }
+        isClinicallyValidated: { type: boolean }
+        limitations:
+          type: array
+          items: { type: string }
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, requestId, details]
+          properties:
+            code: { type: string }
+            message: { type: string }
+            requestId: { type: string }
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field: { type: string }
+                  code: { type: string }
+                  message: { type: string }

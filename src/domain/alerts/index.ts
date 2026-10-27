@@ -1,0 +1,13 @@
+/**
+ * Domain module: Clinical Alerts & Doctor Disposition
+ * Status: OPEN -> ACKNOWLEDGED -> UNDER_REVIEW -> CHANGE_REQUIRED | CLINICAL_DISPOSITION_RECORDED | RESOLVED
+ */
+export type AlertStatus =
+  | 'OPEN'
+  | 'ACKNOWLEDGED'
+  | 'UNDER_REVIEW'
+  | 'CHANGE_REQUIRED'
+  | 'CLINICAL_DISPOSITION_RECORDED'
+  | 'RESOLVED';
+
+export type DispositionType = 'CHANGE_REQUIRED' | 'CLINICALLY_REVIEWED' | 'OTHER_DOCUMENTED';
