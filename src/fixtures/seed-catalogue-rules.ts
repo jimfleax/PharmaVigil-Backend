@@ -1,3 +1,4 @@
+import type { Db } from 'mongodb';
 import type { MedicationCatalogItem } from '../domain/medicine-matching/types.js';
 import type { ClinicalRuleSet } from '../domain/rule-engine/types.js';
 
@@ -436,3 +437,21 @@ export const SEEDED_ILLUSTRATIVE_RULESET: ClinicalRuleSet = {
     },
   ],
 };
+
+export async function seedCatalogueAndRules(db: Db): Promise<void> {
+  const catalogueColl = db.collection<MedicationCatalogItem>('medication_catalogue');
+  for (const item of SYNTHETIC_CATALOGUE_ITEMS) {
+    await catalogueColl.updateOne(
+      { _id: item._id },
+      { $set: item },
+      { upsert: true },
+    );
+  }
+
+  const rulesColl = db.collection<ClinicalRuleSet>('rule_sets');
+  await rulesColl.updateOne(
+    { ruleSetId: SEEDED_ILLUSTRATIVE_RULESET.ruleSetId, version: SEEDED_ILLUSTRATIVE_RULESET.version },
+    { $set: SEEDED_ILLUSTRATIVE_RULESET },
+    { upsert: true },
+  );
+}
