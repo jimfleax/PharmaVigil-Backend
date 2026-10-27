@@ -9,10 +9,10 @@ export async function connectToDatabase(): Promise<{ client: MongoClient; db: Db
     return { client, db: dbInstance };
   }
 
-  client = new MongoClient(env.MONGODB_URI, {
+  client = new MongoClient(env.EFFECTIVE_MONGODB_URI, {
     maxPoolSize: 10,
     minPoolSize: 1,
-    serverSelectionTimeoutMS: 5000,
+    serverSelectionTimeoutMS: 8000,
   });
 
   await client.connect();
