@@ -439,9 +439,19 @@ export const SEEDED_ILLUSTRATIVE_RULESET: ClinicalRuleSet = {
 };
 
 export async function seedCatalogueAndRules(db: Db): Promise<void> {
-  const catalogueColl = db.collection<MedicationCatalogItem>('medication_catalogue');
+  const catalogueColl = db.collection<MedicationCatalogItem>('medication_catalog');
   for (const item of SYNTHETIC_CATALOGUE_ITEMS) {
     await catalogueColl.updateOne(
+      { _id: item._id },
+      { $set: item },
+      { upsert: true },
+    );
+  }
+
+  // Also maintain backward compatibility for medication_catalogue if referenced
+  const legacyColl = db.collection<MedicationCatalogItem>('medication_catalogue');
+  for (const item of SYNTHETIC_CATALOGUE_ITEMS) {
+    await legacyColl.updateOne(
       { _id: item._id },
       { $set: item },
       { upsert: true },

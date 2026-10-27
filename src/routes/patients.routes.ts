@@ -9,6 +9,8 @@ import { requireRole } from '../middleware/require-role.js';
 import {
   SearchPatientsQuerySchema,
   ConfirmPatientLinkSchema,
+  AddAllergySchema,
+  AddMedicationHistorySchema,
 } from '../schemas/patient.schemas.js';
 
 export const patientsRoutes = new Hono<{ Variables: AppVariables }>();
@@ -85,6 +87,32 @@ patientsRoutes.get(
   },
 );
 
+// API-ALLERGY-002: POST /patients/:id/allergies (Doctor, Pharmacist, Patient)
+patientsRoutes.post(
+  '/:id/allergies',
+  requireAuth,
+  requireMembership,
+  requireRole('DOCTOR', 'PHARMACIST', 'PATIENT'),
+  zValidator('json', AddAllergySchema),
+  async (c) => {
+    const user = c.get('user')!;
+    const membership = c.get('membership')!;
+    const patientId = c.req.param('id');
+    const body = c.req.valid('json');
+    const requestId = c.get('requestId');
+
+    const service = new PatientService(getDatabase());
+    const data = await service.addAllergy(
+      membership.hospitalId,
+      patientId,
+      { userId: user.userId, role: membership.role },
+      body,
+      requestId,
+    );
+    return c.json(data, 201);
+  },
+);
+
 // API-HIST-001: GET /patients/:id/medication-history (Doctor, Pharmacist)
 patientsRoutes.get(
   '/:id/medication-history',
@@ -97,5 +125,31 @@ patientsRoutes.get(
     const service = new PatientService(getDatabase());
     const data = await service.getMedicationHistory(membership.hospitalId, patientId);
     return c.json({ data });
+  },
+);
+
+// API-HIST-002: POST /patients/:id/medication-history (Doctor, Pharmacist, Patient)
+patientsRoutes.post(
+  '/:id/medication-history',
+  requireAuth,
+  requireMembership,
+  requireRole('DOCTOR', 'PHARMACIST', 'PATIENT'),
+  zValidator('json', AddMedicationHistorySchema),
+  async (c) => {
+    const user = c.get('user')!;
+    const membership = c.get('membership')!;
+    const patientId = c.req.param('id');
+    const body = c.req.valid('json');
+    const requestId = c.get('requestId');
+
+    const service = new PatientService(getDatabase());
+    const data = await service.addMedicationHistory(
+      membership.hospitalId,
+      patientId,
+      { userId: user.userId, role: membership.role },
+      body,
+      requestId,
+    );
+    return c.json(data, 201);
   },
 );
