@@ -88,6 +88,7 @@ export function createApp(): Hono<{ Variables: AppVariables }> {
   apiV1.route('/appointments', appointmentsRoutes);
   apiV1.route('/notifications', notificationsRoutes);
   apiV1.route('/audit', auditRoutes);
+  apiV1.route('/audit-events', auditRoutes); // Dual mount for OpenAPI 3.1.0 conformance
   apiV1.route('/demo', demoRoutes);
 
   // Mount API v1 under root

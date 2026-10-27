@@ -101,12 +101,12 @@ export interface AlertSummary {
 
 export interface PrescribedSubjectItem {
   itemId: string;
-  catalogueId?: string;
+  catalogueId?: string | undefined;
   canonicalIngredientIds: string[];
   matchStatus: 'CONFIRMED' | 'AMBIGUOUS' | 'UNSUPPORTED' | 'UNRESOLVED';
-  brandText?: string;
-  strength?: { value: number; unit: string };
-  dosageForm?: string;
+  brandText?: string | undefined;
+  strength?: { value: number; unit: string } | undefined;
+  dosageForm?: string | undefined;
 }
 
 export interface ActiveMedicationEntry {
@@ -118,7 +118,7 @@ export interface ActiveMedicationEntry {
 
 export interface AllergyEntry {
   allergyId: string;
-  canonicalIngredientId?: string;
+  canonicalIngredientId?: string | undefined;
   substanceText: string;
   recordType: 'ALLERGY' | 'ADVERSE_REACTION';
   verificationStatus: 'CONFIRMED' | 'REPORTED' | 'UNVERIFIED';
@@ -126,17 +126,17 @@ export interface AllergyEntry {
 
 export interface AdverseReactionEntry {
   reactionId: string;
-  canonicalIngredientId?: string;
+  canonicalIngredientId?: string | undefined;
   substanceText: string;
-  reactionDescription?: string;
+  reactionDescription?: string | undefined;
   severity: 'UNKNOWN' | 'MILD' | 'MODERATE' | 'SEVERE';
   verificationStatus: 'CONFIRMED' | 'REPORTED' | 'UNVERIFIED';
 }
 
 export interface ClinicalContextSnapshot {
   recordedContextFlags: Set<ClinicalContextRequirement> | ClinicalContextRequirement[];
-  isPregnant?: boolean;
-  hasRenalImpairment?: boolean;
+  isPregnant?: boolean | undefined;
+  hasRenalImpairment?: boolean | undefined;
 }
 
 export interface RuleEngineInput {

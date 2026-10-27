@@ -1,6 +1,15 @@
-/**
- * Repositories Layer (MongoDB)
- * Every tenant-owned repository query strictly enforces `hospitalId` scoping.
- * No unscoped queries permitted.
- */
-export {};
+export * from './hospital.repository.js';
+export * from './user.repository.js';
+export * from './membership.repository.js';
+export * from './session.repository.js';
+export * from './patient.repository.js';
+export * from './allergy.repository.js';
+export * from './medication-history.repository.js';
+export * from './catalogue.repository.js';
+export * from './capture.repository.js';
+export * from './prescription.repository.js';
+export * from './check.repository.js';
+export * from './alert.repository.js';
+export * from './dispensing.repository.js';
+export * from './idempotency.repository.js';
+export * from './audit.repository.js';

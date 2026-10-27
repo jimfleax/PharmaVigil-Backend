@@ -1,4 +1,5 @@
 import type { Context } from 'hono';
+import type { CoverageCategory, EvidenceReference } from '../domain/rule-engine/types.js';
 
 export type UserRole = 'PATIENT' | 'DOCTOR' | 'PHARMACIST' | 'HOSPITAL_ADMIN';
 export type MembershipStatus = 'PENDING' | 'ACTIVE' | 'REJECTED' | 'SUSPENDED' | 'REVOKED';
@@ -156,12 +157,196 @@ export interface PatientMedicationHistoryDocument {
   version: number;
 }
 
+// Track 3 Workflow, Revisions, Checks, Alerts & Dispensing Documents
+
+export type CaptureMode = 'BROWSER_OCR' | 'MANUAL_ENTRY' | 'SEEDED_IMAGE';
+export type CaptureStatus = 'UPLOADED' | 'OCR_COMPLETE' | 'MANUAL_ENTRY' | 'CONFIRMED' | 'FAILED' | 'EXPIRED';
+
+export interface PrescriptionItemModel {
+  rawExtractedText: string;
+  catalogueItemId?: string | null | undefined;
+  canonicalIngredientIds: string[];
+  brandText?: string | null | undefined;
+  strengthValue?: number | null | undefined;
+  strengthUnit?: string | null | undefined;
+  dosageForm?: string | null | undefined;
+  doseValue?: number | null | undefined;
+  doseUnit?: string | null | undefined;
+  route?: string | null | undefined;
+  frequency?: string | null | undefined;
+  durationValue?: number | null | undefined;
+  durationUnit?: string | null | undefined;
+  matchStatus: 'CONFIRMED' | 'AMBIGUOUS' | 'UNSUPPORTED' | 'UNRESOLVED';
+  matchConfidence?: number | null | undefined;
+}
+
+export interface PrescriptionCaptureDocument {
+  _id: string;
+  hospitalId: string;
+  patientId: string;
+  captureMode: CaptureMode;
+  ocrLanguage: string;
+  extractedText: string;
+  ocrConfidence?: number | null | undefined;
+  items: PrescriptionItemModel[];
+  status: CaptureStatus;
+  createdBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+  version: number;
+}
+
+export type PrescriptionStatus =
+  | 'ACTIVE'
+  | 'DOCTOR_REVIEW_REQUIRED'
+  | 'DISPENSED'
+  | 'CANCELLED';
+
+export interface PrescriptionDocument {
+  _id: string;
+  hospitalId: string;
+  patientId: string;
+  prescriberUserId: string;
+  workflowType: 'OUTPATIENT';
+  currentRevisionId: string;
+  status: PrescriptionStatus;
+  createdAt: Date;
+  updatedAt: Date;
+  version: number;
+}
+
+export interface PrescriptionRevisionDocument {
+  _id: string;
+  hospitalId: string;
+  prescriptionId: string;
+  revisionNumber: number;
+  supersedesRevisionId?: string | null | undefined;
+  items: PrescriptionItemModel[];
+  sourceCaptureId?: string | null | undefined;
+  changeReason?: string | null | undefined;
+  createdBy: string;
+  createdAt: Date;
+  version: number;
+}
+
+export interface CheckRunDocument {
+  _id: string;
+  hospitalId: string;
+  patientId: string;
+  subjectType: 'PRESCRIPTION_REVISION' | 'MEDICATION_ORDER_VERSION';
+  subjectId: string;
+  subjectVersion: number;
+  ruleSetId: string;
+  ruleSetVersion: string;
+  outcome: 'FLAGGED' | 'NO_MATCHING_RULE' | 'INCOMPLETE' | 'UNSUPPORTED' | 'FAILED';
+  coverageByCategory: {
+    drugDrug: CoverageCategory;
+    foodDrink: CoverageCategory;
+    allergy: CoverageCategory;
+    adverseReaction: CoverageCategory;
+  };
+  alertIds: string[];
+  limitations: string[];
+  requestId: string;
+  createdBy: string;
+  createdAt: Date;
+  failureCode?: string;
+  failureMessage?: string;
+}
+
+export type AlertStatus =
+  | 'OPEN'
+  | 'ACKNOWLEDGED'
+  | 'UNDER_REVIEW'
+  | 'CHANGE_REQUIRED'
+  | 'CLINICAL_DISPOSITION_RECORDED'
+  | 'RESOLVED';
+
+export type AlertSeverity = 'INFO' | 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL';
+
+export interface AlertDocument {
+  _id: string;
+  hospitalId: string;
+  patientId: string;
+  checkId: string;
+  subjectType: 'PRESCRIPTION_REVISION' | 'MEDICATION_ORDER_VERSION';
+  subjectId: string;
+  subjectVersion: number;
+  ruleId: string;
+  ruleVersion: number;
+  category: 'DRUG_DRUG' | 'FOOD_DRINK' | 'ALLERGY' | 'ADVERSE_REACTION';
+  severity: AlertSeverity;
+  status: AlertStatus;
+  rationale: string;
+  recommendedNextAction: string;
+  limitations: string[];
+  evidenceReferences: EvidenceReference[];
+  assignedDoctorId?: string | null | undefined;
+  createdAt: Date;
+  updatedAt: Date;
+  version: number;
+}
+
+export type DispositionType = 'CHANGE_REQUIRED' | 'CLINICALLY_REVIEWED' | 'OTHER_DOCUMENTED';
+
+export interface AlertDispositionDocument {
+  _id: string;
+  hospitalId: string;
+  alertId: string;
+  doctorId: string;
+  dispositionType: DispositionType;
+  rationale: string;
+  alertVersionAtDisposition: number;
+  recordedAt: Date;
+}
+
+export interface DispensingAuthorizationDocument {
+  _id: string;
+  hospitalId: string;
+  patientId: string;
+  prescriptionId: string;
+  prescriptionRevisionId: string;
+  checkRunId: string;
+  pharmacistId: string;
+  authorizedAt: Date;
+  acknowledgementText: string;
+  version: number;
+}
+
+export interface IdempotencyRecordDocument {
+  _id: string;
+  hospitalId: string;
+  actorUserId: string;
+  operation: string;
+  key: string;
+  requestHash: string;
+  responseStatusCode: number;
+  responseHeaders: Record<string, string>;
+  responseBody: unknown;
+  status: 'IN_PROGRESS' | 'COMPLETED';
+  createdAt: Date;
+  expiresAt: Date;
+}
+
 export interface AuditEventDocument {
   _id: string;
   hospitalId: string;
   actorUserId: string;
   action: string;
-  resourceType: 'User' | 'Membership' | 'PatientRecord' | 'Session';
+  resourceType:
+    | 'User'
+    | 'Membership'
+    | 'PatientRecord'
+    | 'Session'
+    | 'PrescriptionCapture'
+    | 'Prescription'
+    | 'PrescriptionRevision'
+    | 'CheckRun'
+    | 'Alert'
+    | 'AlertDisposition'
+    | 'DispensingAuthorization'
+    | 'DemoWorkspace'
+    | string;
   resourceId: string;
   timestamp: Date;
   requestId: string;
