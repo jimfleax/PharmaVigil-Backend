@@ -4,6 +4,8 @@ import type { AppVariables } from './types/index.js';
 import { env } from './config/env.js';
 import { requestIdMiddleware } from './middleware/request-id.js';
 import { errorHandler } from './middleware/error-handler.js';
+import { sessionMiddleware } from './middleware/session.js';
+import { csrfMiddleware } from './middleware/csrf.js';
 
 // Route imports
 import { healthRoutes } from './routes/health.routes.js';
@@ -12,6 +14,7 @@ import { hospitalsRoutes } from './routes/hospitals.routes.js';
 import { membershipsRoutes } from './routes/memberships.routes.js';
 import { usersRoutes } from './routes/users.routes.js';
 import { patientsRoutes } from './routes/patients.routes.js';
+import { patientMeRoutes } from './routes/patient-me.routes.js';
 import { catalogueRoutes } from './routes/catalogue.routes.js';
 import { capturesRoutes } from './routes/captures.routes.js';
 import { prescriptionsRoutes } from './routes/prescriptions.routes.js';
@@ -46,11 +49,23 @@ export function createApp(): Hono<{ Variables: AppVariables }> {
       },
       credentials: true,
       allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-      allowHeaders: ['Content-Type', 'Authorization', 'x-request-id', 'Idempotency-Key', 'If-Match'],
+      allowHeaders: [
+        'Content-Type',
+        'Authorization',
+        'Cookie',
+        'x-request-id',
+        'x-hospital-id',
+        'Idempotency-Key',
+        'If-Match',
+      ],
       exposeHeaders: ['x-request-id', 'ETag'],
       maxAge: 600,
     }),
   );
+
+  // Global session extraction and CSRF protection
+  app.use('*', sessionMiddleware);
+  app.use('*', csrfMiddleware);
 
   // Mount API v1 router
   const apiV1 = new Hono<{ Variables: AppVariables }>();
@@ -62,6 +77,7 @@ export function createApp(): Hono<{ Variables: AppVariables }> {
   apiV1.route('/memberships', membershipsRoutes);
   apiV1.route('/users', usersRoutes);
   apiV1.route('/patients', patientsRoutes);
+  apiV1.route('/patient/me', patientMeRoutes);
   apiV1.route('/medicine-catalogue', catalogueRoutes);
   apiV1.route('/prescription-captures', capturesRoutes);
   apiV1.route('/prescriptions', prescriptionsRoutes);
