@@ -20,10 +20,7 @@ export const ListAlertsQuerySchema = z.object({
 
 export const AlertDispositionSchema = z.object({
   dispositionType: z.enum(['CHANGE_REQUIRED', 'CLINICALLY_REVIEWED', 'OTHER_DOCUMENTED']),
-  rationale: z
-    .string()
-    .min(3, 'Rationale must be at least 3 characters long')
-    .max(2000),
+  rationale: z.string().min(3, 'Rationale must be at least 3 characters long').max(2000),
 });
 
 export type ListAlertsQuery = z.infer<typeof ListAlertsQuerySchema>;

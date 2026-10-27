@@ -3,10 +3,7 @@ import type { Db } from 'mongodb';
 import { PrescriptionRepository } from '../repositories/prescription.repository.js';
 import { PatientRepository } from '../repositories/patient.repository.js';
 import { AuditRepository } from '../repositories/audit.repository.js';
-import {
-  NotFoundError,
-  ConflictError,
-} from '../middleware/error-handler.js';
+import { NotFoundError, ConflictError } from '../middleware/error-handler.js';
 import type {
   PrescriptionDocument,
   PrescriptionRevisionDocument,

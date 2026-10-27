@@ -9,11 +9,7 @@ import { AuditRepository } from '../repositories/audit.repository.js';
 import { hashConfirmationPhrase } from '../domain/auth/index.js';
 import { normalizeMedicineInput } from '../domain/medicine-matching/normalizer.js';
 import { matchMedicineFromCatalogue } from '../domain/medicine-matching/matcher.js';
-import {
-  ConflictError,
-  ForbiddenError,
-  NotFoundError,
-} from '../middleware/error-handler.js';
+import { ConflictError, ForbiddenError, NotFoundError } from '../middleware/error-handler.js';
 import type {
   ConfirmPatientLink,
   AddAllergyInput,
@@ -280,7 +276,9 @@ export class PatientService {
       verificationStatus = input.verificationStatus || 'VERIFIED';
     }
 
-    let canonicalIngredientIds = input.canonicalIngredientIds ? [...input.canonicalIngredientIds] : [];
+    let canonicalIngredientIds = input.canonicalIngredientIds
+      ? [...input.canonicalIngredientIds]
+      : [];
     let catalogueItemId = input.catalogueItemId;
 
     if (canonicalIngredientIds.length === 0) {

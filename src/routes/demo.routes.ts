@@ -7,10 +7,7 @@ import { requireAuth } from '../middleware/require-auth.js';
 import { requireMembership } from '../middleware/require-membership.js';
 import { requireRole } from '../middleware/require-role.js';
 import { idempotencyMiddleware } from '../middleware/idempotency.js';
-import {
-  ResetDemoWorkspaceSchema,
-  SeedDemoWorkspaceSchema,
-} from '../schemas/demo.schemas.js';
+import { ResetDemoWorkspaceSchema, SeedDemoWorkspaceSchema } from '../schemas/demo.schemas.js';
 
 export const demoRoutes = new Hono<{ Variables: AppVariables }>();
 

@@ -76,11 +76,7 @@ export class AppointmentRepository {
 
     if (filter.cursor) query._id = { $gt: filter.cursor };
 
-    return this.collection
-      .find(query)
-      .sort({ startAt: 1 })
-      .limit(filter.limit)
-      .toArray();
+    return this.collection.find(query).sort({ startAt: 1 }).limit(filter.limit).toArray();
   }
 
   async cancel(

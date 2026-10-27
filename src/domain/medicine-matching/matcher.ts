@@ -44,8 +44,7 @@ export function matchMedicineFromCatalogue(
   for (const match of directMatches) {
     if (
       match.productType === 'COMBINATION' &&
-      (match.ingredientCompositionStatus === 'UNKNOWN' ||
-        match.canonicalIngredientIds.length < 2)
+      (match.ingredientCompositionStatus === 'UNKNOWN' || match.canonicalIngredientIds.length < 2)
     ) {
       return {
         matchStatus: 'UNSUPPORTED',

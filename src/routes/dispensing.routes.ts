@@ -23,13 +23,8 @@ dispensingRoutes.post(
     const membership = c.get('membership')!;
     const user = c.get('user')!;
     const requestId = c.get('requestId');
-    const {
-      prescriptionId,
-      prescriptionRevisionId,
-      checkRunId,
-      expectedVersion,
-      acknowledgement,
-    } = c.req.valid('json');
+    const { prescriptionId, prescriptionRevisionId, checkRunId, expectedVersion, acknowledgement } =
+      c.req.valid('json');
 
     const service = new DispensingService(getDatabase());
     const data = await service.authorizeDispensing(

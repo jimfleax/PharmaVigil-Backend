@@ -137,26 +137,21 @@ export class DemoService {
     // 1. Seed Synthetic Catalogue Items
     const catalogueColl = this.db.collection<MedicationCatalogItem>('medication_catalog');
     for (const item of SYNTHETIC_CATALOGUE_ITEMS) {
-      await catalogueColl.updateOne(
-        { _id: item._id },
-        { $set: item },
-        { upsert: true },
-      );
+      await catalogueColl.updateOne({ _id: item._id }, { $set: item }, { upsert: true });
     }
 
     const legacyColl = this.db.collection<MedicationCatalogItem>('medication_catalogue');
     for (const item of SYNTHETIC_CATALOGUE_ITEMS) {
-      await legacyColl.updateOne(
-        { _id: item._id },
-        { $set: item },
-        { upsert: true },
-      );
+      await legacyColl.updateOne({ _id: item._id }, { $set: item }, { upsert: true });
     }
 
     // 2. Seed Illustrative Ruleset
     const rulesColl = this.db.collection<ClinicalRuleSet>('rule_sets');
     await rulesColl.updateOne(
-      { ruleSetId: SEEDED_ILLUSTRATIVE_RULESET.ruleSetId, version: SEEDED_ILLUSTRATIVE_RULESET.version },
+      {
+        ruleSetId: SEEDED_ILLUSTRATIVE_RULESET.ruleSetId,
+        version: SEEDED_ILLUSTRATIVE_RULESET.version,
+      },
       { $set: SEEDED_ILLUSTRATIVE_RULESET },
       { upsert: true },
     );
@@ -190,11 +185,9 @@ export class DemoService {
     ];
 
     for (const patient of demoPatients) {
-      await this.db.collection<PatientRecordDocument>('patient_records').updateOne(
-        { _id: patient._id },
-        { $set: patient },
-        { upsert: true },
-      );
+      await this.db
+        .collection<PatientRecordDocument>('patient_records')
+        .updateOne({ _id: patient._id }, { $set: patient }, { upsert: true });
     }
 
     const demoAllergies: PatientAllergyDocument[] = [
@@ -231,11 +224,9 @@ export class DemoService {
     ];
 
     for (const allergy of demoAllergies) {
-      await this.db.collection<PatientAllergyDocument>('patient_allergies').updateOne(
-        { _id: allergy._id },
-        { $set: allergy },
-        { upsert: true },
-      );
+      await this.db
+        .collection<PatientAllergyDocument>('patient_allergies')
+        .updateOne({ _id: allergy._id }, { $set: allergy }, { upsert: true });
     }
 
     const demoMedHistory: PatientMedicationHistoryDocument[] = [
@@ -259,11 +250,9 @@ export class DemoService {
     ];
 
     for (const med of demoMedHistory) {
-      await this.db.collection<PatientMedicationHistoryDocument>('patient_medication_history').updateOne(
-        { _id: med._id },
-        { $set: med },
-        { upsert: true },
-      );
+      await this.db
+        .collection<PatientMedicationHistoryDocument>('patient_medication_history')
+        .updateOne({ _id: med._id }, { $set: med }, { upsert: true });
     }
 
     // 4. Append Audit Trail

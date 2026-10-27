@@ -34,18 +34,13 @@ notificationsRoutes.get(
 );
 
 // API-NOTIF-002: POST /notifications/:id/read
-notificationsRoutes.post(
-  '/:id/read',
-  requireAuth,
-  requireMembership,
-  async (c) => {
-    const membership = c.get('membership')!;
-    const user = c.get('user')!;
-    const notificationId = c.req.param('id');
+notificationsRoutes.post('/:id/read', requireAuth, requireMembership, async (c) => {
+  const membership = c.get('membership')!;
+  const user = c.get('user')!;
+  const notificationId = c.req.param('id');
 
-    const service = new NotificationService(getDatabase());
-    await service.markAsRead(membership.hospitalId, notificationId, user.userId);
+  const service = new NotificationService(getDatabase());
+  await service.markAsRead(membership.hospitalId, notificationId, user.userId);
 
-    return c.body(null, 204);
-  },
-);
+  return c.body(null, 204);
+});

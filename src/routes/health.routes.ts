@@ -20,9 +20,9 @@ healthRoutes.get('/live', (c) => {
  * Confirms essential dependencies (MongoDB) are available without exposing sensitive details.
  */
 healthRoutes.get('/ready', async (c) => {
-  const isDbHealthy = await checkDatabaseHealth();
+  const health = await checkDatabaseHealth();
 
-  if (!isDbHealthy) {
+  if (!health.ok) {
     const requestId = c.get('requestId') || 'unknown';
     return c.json(
       {
@@ -30,7 +30,7 @@ healthRoutes.get('/ready', async (c) => {
           code: 'SERVICE_UNAVAILABLE',
           message: 'Database connection is currently unavailable.',
           requestId,
-          details: [],
+          details: health.error ? [health.error] : [],
         },
       },
       503,

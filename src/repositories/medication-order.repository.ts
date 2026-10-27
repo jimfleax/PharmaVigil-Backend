@@ -34,11 +34,11 @@ export class MedicationOrderRepository {
     return this.versions.findOne({ _id: versionId, hospitalId });
   }
 
-  async listVersions(hospitalId: string, orderId: string): Promise<MedicationOrderVersionDocument[]> {
-    return this.versions
-      .find({ hospitalId, orderId })
-      .sort({ versionNumber: -1 })
-      .toArray();
+  async listVersions(
+    hospitalId: string,
+    orderId: string,
+  ): Promise<MedicationOrderVersionDocument[]> {
+    return this.versions.find({ hospitalId, orderId }).sort({ versionNumber: -1 }).toArray();
   }
 
   async list(
@@ -50,11 +50,7 @@ export class MedicationOrderRepository {
     if (filter.status) query.status = filter.status as MedicationOrderStatus;
     if (filter.cursor) query._id = { $gt: filter.cursor };
 
-    return this.orders
-      .find(query)
-      .sort({ createdAt: -1 })
-      .limit(filter.limit)
-      .toArray();
+    return this.orders.find(query).sort({ createdAt: -1 }).limit(filter.limit).toArray();
   }
 
   async appendVersion(
@@ -84,11 +80,7 @@ export class MedicationOrderRepository {
     return { order: updatedOrder, version: newVersion };
   }
 
-  async linkCheckRun(
-    hospitalId: string,
-    versionId: string,
-    checkRunId: string,
-  ): Promise<boolean> {
+  async linkCheckRun(hospitalId: string, versionId: string, checkRunId: string): Promise<boolean> {
     const res = await this.versions.updateOne(
       { _id: versionId, hospitalId },
       { $set: { checkRunId } },

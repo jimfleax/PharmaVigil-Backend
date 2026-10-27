@@ -35,4 +35,3 @@ export const AddMedicationHistorySchema = z.object({
   verificationStatus: z.enum(['VERIFIED', 'REPORTED', 'UNVERIFIED']).optional(),
 });
 export type AddMedicationHistoryInput = z.infer<typeof AddMedicationHistorySchema>;
-

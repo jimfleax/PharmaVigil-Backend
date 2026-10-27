@@ -1,9 +1,5 @@
 import type { Db, Filter } from 'mongodb';
-import type {
-  AlertDocument,
-  AlertDispositionDocument,
-  AlertStatus,
-} from '../types/index.js';
+import type { AlertDocument, AlertDispositionDocument, AlertStatus } from '../types/index.js';
 
 export class AlertRepository {
   constructor(private db: Db) {}
@@ -47,11 +43,7 @@ export class AlertRepository {
     if (filter.assignedDoctorId) query.assignedDoctorId = filter.assignedDoctorId;
     if (filter.cursor) query._id = { $gt: filter.cursor };
 
-    return this.alerts
-      .find(query)
-      .sort({ createdAt: -1 })
-      .limit(filter.limit)
-      .toArray();
+    return this.alerts.find(query).sort({ createdAt: -1 }).limit(filter.limit).toArray();
   }
 
   async acknowledge(
@@ -123,9 +115,6 @@ export class AlertRepository {
     hospitalId: string,
     alertId: string,
   ): Promise<AlertDispositionDocument[]> {
-    return this.dispositions
-      .find({ hospitalId, alertId })
-      .sort({ recordedAt: -1 })
-      .toArray();
+    return this.dispositions.find({ hospitalId, alertId }).sort({ recordedAt: -1 }).toArray();
   }
 }

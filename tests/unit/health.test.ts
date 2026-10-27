@@ -24,6 +24,25 @@ describe('Health API endpoints', () => {
     expect(body.status).toBe('ok');
   });
 
+  it('GET /healthz/live returns 200 UP for liveness probe', async () => {
+    const res = await app.request('/healthz/live');
+    expect(res.status).toBe(200);
+
+    const body = (await res.json()) as { status: string; uptime: number };
+    expect(body.status).toBe('UP');
+    expect(typeof body.uptime).toBe('number');
+  });
+
+  it('GET /healthz/ready returns 200 READY when database is healthy', async () => {
+    const res = await app.request('/healthz/ready');
+    expect(res.status).toBe(200);
+
+    const body = (await res.json()) as { status: string; health: { ok: boolean; status: string } };
+    expect(body.status).toBe('READY');
+    expect(body.health.ok).toBe(true);
+    expect(body.health.status).toBe('connected');
+  });
+
   it('GET /api/v1/unknown returns standard 404 error envelope', async () => {
     const res = await app.request('/api/v1/nonexistent');
     expect(res.status).toBe(404);

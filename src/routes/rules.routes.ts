@@ -15,16 +15,11 @@ import {
 export const rulesRoutes = new Hono<{ Variables: AppVariables }>();
 
 // API-RULE-001: GET /rule-sets/current
-rulesRoutes.get(
-  '/current',
-  requireAuth,
-  requireMembership,
-  async (c) => {
-    const service = new RuleGovernanceService(getDatabase());
-    const data = await service.getCurrentMetadata();
-    return c.json({ data });
-  },
-);
+rulesRoutes.get('/current', requireAuth, requireMembership, async (c) => {
+  const service = new RuleGovernanceService(getDatabase());
+  const data = await service.getCurrentMetadata();
+  return c.json({ data });
+});
 
 // API-RULE-002: GET /rule-sets
 rulesRoutes.get(

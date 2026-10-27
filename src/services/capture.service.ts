@@ -3,11 +3,7 @@ import type { Db } from 'mongodb';
 import { CaptureRepository } from '../repositories/capture.repository.js';
 import { PatientRepository } from '../repositories/patient.repository.js';
 import { AuditRepository } from '../repositories/audit.repository.js';
-import {
-  NotFoundError,
-  ValidationError,
-  ConflictError,
-} from '../middleware/error-handler.js';
+import { NotFoundError, ValidationError, ConflictError } from '../middleware/error-handler.js';
 import type {
   CaptureMode,
   CaptureStatus,

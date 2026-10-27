@@ -4,11 +4,7 @@ import { AlertRepository } from '../repositories/alert.repository.js';
 import { AuditRepository } from '../repositories/audit.repository.js';
 import { MembershipRepository } from '../repositories/membership.repository.js';
 import { NotificationService } from './notification.service.js';
-import {
-  NotFoundError,
-  ValidationError,
-  ConflictError,
-} from '../middleware/error-handler.js';
+import { NotFoundError, ValidationError, ConflictError } from '../middleware/error-handler.js';
 import type {
   AlertDocument,
   AlertDispositionDocument,

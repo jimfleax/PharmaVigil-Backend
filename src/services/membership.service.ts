@@ -3,10 +3,7 @@ import type { Db } from 'mongodb';
 import { MembershipRepository } from '../repositories/membership.repository.js';
 import { HospitalRepository } from '../repositories/hospital.repository.js';
 import { AuditRepository } from '../repositories/audit.repository.js';
-import {
-  ConflictError,
-  NotFoundError,
-} from '../middleware/error-handler.js';
+import { ConflictError, NotFoundError } from '../middleware/error-handler.js';
 import type { MembershipStatus } from '../types/index.js';
 import type {
   MembershipRequest,
@@ -90,9 +87,7 @@ export class MembershipService {
       if (!current) {
         throw new NotFoundError('Membership not found in this hospital');
       }
-      throw new ConflictError(
-        'This record changed. Reload and review the latest version.',
-      );
+      throw new ConflictError('This record changed. Reload and review the latest version.');
     }
 
     await this.auditRepo.append({
@@ -131,9 +126,7 @@ export class MembershipService {
     );
 
     if (!updated) {
-      throw new ConflictError(
-        'This record changed. Reload and review the latest version.',
-      );
+      throw new ConflictError('This record changed. Reload and review the latest version.');
     }
 
     await this.auditRepo.append({
@@ -172,9 +165,7 @@ export class MembershipService {
     );
 
     if (!updated) {
-      throw new ConflictError(
-        'This record changed. Reload and review the latest version.',
-      );
+      throw new ConflictError('This record changed. Reload and review the latest version.');
     }
 
     await this.auditRepo.append({

@@ -7,10 +7,7 @@ import { requireAuth } from '../middleware/require-auth.js';
 import { requireMembership } from '../middleware/require-membership.js';
 import { requireRole } from '../middleware/require-role.js';
 import { idempotencyMiddleware } from '../middleware/idempotency.js';
-import {
-  ListAlertsQuerySchema,
-  AlertDispositionSchema,
-} from '../schemas/alert.schemas.js';
+import { ListAlertsQuerySchema, AlertDispositionSchema } from '../schemas/alert.schemas.js';
 import { ValidationError } from '../middleware/error-handler.js';
 
 export const alertsRoutes = new Hono<{ Variables: AppVariables }>();

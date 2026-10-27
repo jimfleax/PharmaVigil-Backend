@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import type { AppVariables } from './types/index.js';
 import { env } from './config/env.js';
+import { connectToDatabase, checkDatabaseHealth } from './config/db.js';
 import { requestIdMiddleware } from './middleware/request-id.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { sessionMiddleware } from './middleware/session.js';
@@ -63,6 +64,26 @@ export function createApp(): Hono<{ Variables: AppVariables }> {
       maxAge: 600,
     }),
   );
+
+  // Liveness Probe: process health only — never queries database
+  app.get('/healthz/live', (c) => {
+    return c.json({ status: 'UP', uptime: process.uptime() }, 200);
+  });
+
+  // Readiness Probe: checks active database connection
+  app.get('/healthz/ready', async (c) => {
+    const health = await checkDatabaseHealth();
+    if (!health.ok) {
+      return c.json({ status: 'DOWN', health }, 503);
+    }
+    return c.json({ status: 'READY', health }, 200);
+  });
+
+  // Global DB middleware — ensures warm/cached connection per request
+  app.use('*', async (_c, next) => {
+    await connectToDatabase();
+    await next();
+  });
 
   // Global session extraction and CSRF protection
   app.use('*', sessionMiddleware);

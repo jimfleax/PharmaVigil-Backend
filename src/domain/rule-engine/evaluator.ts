@@ -50,8 +50,10 @@ export function evaluateClinicalRules(input: RuleEngineInput): RuleEngineOutput 
         coverageByCategory: {
           drugDrug: {
             status: 'UNSUPPORTED',
-            limitation: 'One or more prescribed medicines have unresolved or unsupported active ingredient mappings.',
-            evaluatedInputsCount: input.subjectItems.length - unsupportedItems.length - ambiguousItems.length,
+            limitation:
+              'One or more prescribed medicines have unresolved or unsupported active ingredient mappings.',
+            evaluatedInputsCount:
+              input.subjectItems.length - unsupportedItems.length - ambiguousItems.length,
             unsupportedInputsCount: unsupportedItems.length + ambiguousItems.length,
           },
           foodDrink: {
@@ -137,7 +139,9 @@ export function evaluateClinicalRules(input: RuleEngineInput): RuleEngineOutput 
               drugDrugIncomplete = true;
             } else {
               drugDrugFlagged = true;
-              alerts.push(createAlertSummary(rule, Array.from(subjectIngredients), input.subjectId));
+              alerts.push(
+                createAlertSummary(rule, Array.from(subjectIngredients), input.subjectId),
+              );
             }
           }
           break;
@@ -150,7 +154,9 @@ export function evaluateClinicalRules(input: RuleEngineInput): RuleEngineOutput 
               foodDrinkIncomplete = true; // Required dietary context missing (TEST-RULE-003)
             } else {
               foodDrinkFlagged = true;
-              alerts.push(createAlertSummary(rule, Array.from(subjectIngredients), input.subjectId));
+              alerts.push(
+                createAlertSummary(rule, Array.from(subjectIngredients), input.subjectId),
+              );
             }
           }
           break;
@@ -173,7 +179,9 @@ export function evaluateClinicalRules(input: RuleEngineInput): RuleEngineOutput 
               allergyIncomplete = true;
             } else if (hasAllergyRecord) {
               allergyFlagged = true;
-              alerts.push(createAlertSummary(rule, Array.from(subjectIngredients), input.subjectId));
+              alerts.push(
+                createAlertSummary(rule, Array.from(subjectIngredients), input.subjectId),
+              );
             }
           }
           break;
@@ -187,16 +195,16 @@ export function evaluateClinicalRules(input: RuleEngineInput): RuleEngineOutput 
           );
 
           const trigger = rule.trigger.ingredientIds.some((id) => subjectIngredients.has(id));
-          const hasReaction = rule.trigger.ingredientIds.some((id) =>
-            reactionIngredients.has(id),
-          );
+          const hasReaction = rule.trigger.ingredientIds.some((id) => reactionIngredients.has(id));
 
           if (trigger) {
             if (missingContext.length > 0) {
               adverseIncomplete = true;
             } else if (hasReaction) {
               adverseFlagged = true;
-              alerts.push(createAlertSummary(rule, Array.from(subjectIngredients), input.subjectId));
+              alerts.push(
+                createAlertSummary(rule, Array.from(subjectIngredients), input.subjectId),
+              );
             }
           }
           break;

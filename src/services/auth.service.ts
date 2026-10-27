@@ -12,11 +12,7 @@ import {
   normalizeEmail,
   generateSessionTokens,
 } from '../domain/auth/index.js';
-import {
-  ConflictError,
-  UnauthenticatedError,
-  NotFoundError,
-} from '../middleware/error-handler.js';
+import { ConflictError, UnauthenticatedError, NotFoundError } from '../middleware/error-handler.js';
 import type { RegisterRequest, LoginRequest } from '../schemas/auth.schemas.js';
 import type { PatientRecordDocument } from '../types/index.js';
 import { env } from '../config/env.js';
@@ -84,10 +80,12 @@ export class AuthService {
         (p) => p.syntheticHospitalPatientId === input.syntheticHospitalPatientId,
       );
       if (match && match.linkStatus === 'UNLINKED') {
-        await this.db.collection<PatientRecordDocument>('patient_records').updateOne(
-          { _id: match._id, hospitalId: hospital._id },
-          { $set: { linkedUserId: userId, linkStatus: 'PENDING_CONFIRMATION' } },
-        );
+        await this.db
+          .collection<PatientRecordDocument>('patient_records')
+          .updateOne(
+            { _id: match._id, hospitalId: hospital._id },
+            { $set: { linkedUserId: userId, linkStatus: 'PENDING_CONFIRMATION' } },
+          );
       }
     }
 
@@ -110,7 +108,12 @@ export class AuthService {
     };
   }
 
-  async login(input: LoginRequest, ip: string | undefined, userAgent: string | undefined, requestId: string) {
+  async login(
+    input: LoginRequest,
+    ip: string | undefined,
+    userAgent: string | undefined,
+    requestId: string,
+  ) {
     const emailNorm = normalizeEmail(input.email);
     const user = await this.userRepo.findByEmailNormalized(emailNorm);
 

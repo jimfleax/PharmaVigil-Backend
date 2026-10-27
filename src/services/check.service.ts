@@ -11,10 +11,7 @@ import { NotificationService } from './notification.service.js';
 import { evaluateClinicalRules } from '../domain/rule-engine/evaluator.js';
 import { SEEDED_ILLUSTRATIVE_RULESET } from '../fixtures/seed-catalogue-rules.js';
 import { NotFoundError } from '../middleware/error-handler.js';
-import type {
-  CheckRunDocument,
-  AlertDocument,
-} from '../types/index.js';
+import type { CheckRunDocument, AlertDocument } from '../types/index.js';
 import type {
   PrescribedSubjectItem,
   ActiveMedicationEntry,
@@ -270,7 +267,12 @@ export class CheckService {
     return formatCheckEnvelope(check, alerts);
   }
 
-  async retryCheck(hospitalId: string, priorCheckId: string, actorUserId: string, requestId: string) {
+  async retryCheck(
+    hospitalId: string,
+    priorCheckId: string,
+    actorUserId: string,
+    requestId: string,
+  ) {
     const prior = await this.checkRepo.findById(hospitalId, priorCheckId);
     if (!prior) {
       throw new NotFoundError('Prior check run not found');

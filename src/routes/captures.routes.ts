@@ -18,7 +18,9 @@ export const capturesRoutes = new Hono<{ Variables: AppVariables }>();
 
 function parseExpectedVersion(headerVal: string | undefined): number {
   if (!headerVal) {
-    throw new ValidationError('If-Match header with record version is required for this operation.');
+    throw new ValidationError(
+      'If-Match header with record version is required for this operation.',
+    );
   }
   const clean = headerVal.replace(/["']/g, '');
   const version = parseInt(clean, 10);

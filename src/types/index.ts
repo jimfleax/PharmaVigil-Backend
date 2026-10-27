@@ -1,5 +1,9 @@
 import type { Context } from 'hono';
-import type { CoverageCategory, EvidenceReference, ClinicalRule } from '../domain/rule-engine/types.js';
+import type {
+  CoverageCategory,
+  EvidenceReference,
+  ClinicalRule,
+} from '../domain/rule-engine/types.js';
 
 export type UserRole = 'PATIENT' | 'DOCTOR' | 'PHARMACIST' | 'HOSPITAL_ADMIN';
 export type MembershipStatus = 'PENDING' | 'ACTIVE' | 'REJECTED' | 'SUSPENDED' | 'REVOKED';
@@ -132,7 +136,8 @@ export interface PatientAllergyDocument {
   version: number;
 }
 
-export type MedicationHistorySourceType = 'CLINICIAN_PRESCRIBED' | 'PATIENT_REPORTED' | 'IMPORTED_SYNTHETIC';
+export type MedicationHistorySourceType =
+  'CLINICIAN_PRESCRIBED' | 'PATIENT_REPORTED' | 'IMPORTED_SYNTHETIC';
 export type MedicationHistoryStatus = 'ACTIVE' | 'STOPPED' | 'UNKNOWN';
 export type MedicationHistoryVerificationStatus = 'VERIFIED' | 'REPORTED' | 'UNVERIFIED';
 
@@ -160,7 +165,8 @@ export interface PatientMedicationHistoryDocument {
 // Track 3 Workflow, Revisions, Checks, Alerts & Dispensing Documents
 
 export type CaptureMode = 'BROWSER_OCR' | 'MANUAL_ENTRY' | 'SEEDED_IMAGE';
-export type CaptureStatus = 'UPLOADED' | 'OCR_COMPLETE' | 'MANUAL_ENTRY' | 'CONFIRMED' | 'FAILED' | 'EXPIRED';
+export type CaptureStatus =
+  'UPLOADED' | 'OCR_COMPLETE' | 'MANUAL_ENTRY' | 'CONFIRMED' | 'FAILED' | 'EXPIRED';
 
 export interface PrescriptionItemModel {
   rawExtractedText: string;
@@ -196,11 +202,7 @@ export interface PrescriptionCaptureDocument {
   version: number;
 }
 
-export type PrescriptionStatus =
-  | 'ACTIVE'
-  | 'DOCTOR_REVIEW_REQUIRED'
-  | 'DISPENSED'
-  | 'CANCELLED';
+export type PrescriptionStatus = 'ACTIVE' | 'DOCTOR_REVIEW_REQUIRED' | 'DISPENSED' | 'CANCELLED';
 
 export interface PrescriptionDocument {
   _id: string;
@@ -356,7 +358,6 @@ export interface AuditEventDocument {
   metadata?: Record<string, unknown> | undefined;
 }
 
-
 // --- Phase 5 Supporting Modules Types ---
 
 // 1. In-App Notifications
@@ -440,7 +441,8 @@ export interface ClinicalRuleSetDocument {
   ruleSetId: string;
   version: string;
   description: string;
-  status: 'DRAFT' | 'IN_REVIEW' | 'APPROVED' | 'PUBLISHED' | 'RETIRED' | 'ILLUSTRATIVE_NOT_VALIDATED';
+  status:
+    'DRAFT' | 'IN_REVIEW' | 'APPROVED' | 'PUBLISHED' | 'RETIRED' | 'ILLUSTRATIVE_NOT_VALIDATED';
   rules: ClinicalRule[];
   limitations: string[];
   authorUserId: string;

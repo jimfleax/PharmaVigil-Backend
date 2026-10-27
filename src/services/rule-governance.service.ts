@@ -3,15 +3,8 @@ import type { Db } from 'mongodb';
 import { RuleSetRepository } from '../repositories/rule-set.repository.js';
 import { AuditRepository } from '../repositories/audit.repository.js';
 import type { ClinicalRuleSetDocument, RuleSetMetadata } from '../types/index.js';
-import type {
-  CreateRuleSetDraftInput,
-  ListRuleSetsQuery,
-} from '../schemas/rule-set.schemas.js';
-import {
-  NotFoundError,
-  ConflictError,
-  ValidationError,
-} from '../middleware/error-handler.js';
+import type { CreateRuleSetDraftInput, ListRuleSetsQuery } from '../schemas/rule-set.schemas.js';
+import { NotFoundError, ConflictError, ValidationError } from '../middleware/error-handler.js';
 
 export class RuleGovernanceService {
   private ruleRepo: RuleSetRepository;

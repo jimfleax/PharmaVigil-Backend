@@ -1,18 +1,9 @@
 export type RuleCategory = 'DRUG_DRUG' | 'FOOD_DRINK' | 'ALLERGY' | 'ADVERSE_REACTION';
 export type RuleSeverity = 'INFO' | 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL';
 export type RuleSetStatus =
-  | 'DRAFT'
-  | 'IN_REVIEW'
-  | 'APPROVED'
-  | 'PUBLISHED'
-  | 'RETIRED'
-  | 'ILLUSTRATIVE_NOT_VALIDATED';
+  'DRAFT' | 'IN_REVIEW' | 'APPROVED' | 'PUBLISHED' | 'RETIRED' | 'ILLUSTRATIVE_NOT_VALIDATED';
 export type LicenseStatus =
-  | 'VERIFIED'
-  | 'RESTRICTED'
-  | 'PERMISSION_REQUIRED'
-  | 'UNVERIFIED'
-  | 'ORIGINAL_ILLUSTRATIVE';
+  'VERIFIED' | 'RESTRICTED' | 'PERMISSION_REQUIRED' | 'UNVERIFIED' | 'ORIGINAL_ILLUSTRATIVE';
 export type EvidenceStrength = 'NOT_ASSESSED' | 'LOW' | 'MODERATE' | 'HIGH';
 
 export interface EvidenceReference {
@@ -63,12 +54,7 @@ export interface ClinicalRuleSet {
   rules: ClinicalRule[];
 }
 
-export type CheckOutcome =
-  | 'FLAGGED'
-  | 'NO_MATCHING_RULE'
-  | 'INCOMPLETE'
-  | 'UNSUPPORTED'
-  | 'FAILED';
+export type CheckOutcome = 'FLAGGED' | 'NO_MATCHING_RULE' | 'INCOMPLETE' | 'UNSUPPORTED' | 'FAILED';
 
 export type CoverageStatus =
   | 'EVALUATED_WITH_MATCHES'

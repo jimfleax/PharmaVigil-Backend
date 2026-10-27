@@ -106,7 +106,9 @@ export class MedicationOrderService {
     }
 
     if (order.version !== expectedVersion) {
-      throw new ConflictError('Medication order version conflict. Reload and review the latest version.');
+      throw new ConflictError(
+        'Medication order version conflict. Reload and review the latest version.',
+      );
     }
 
     const newVersionId = randomUUID();

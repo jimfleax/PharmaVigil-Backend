@@ -68,12 +68,7 @@ checksRoutes.post(
     const checkId = c.req.param('id');
 
     const service = new CheckService(getDatabase());
-    const data = await service.retryCheck(
-      membership.hospitalId,
-      checkId,
-      user.userId,
-      requestId,
-    );
+    const data = await service.retryCheck(membership.hospitalId, checkId, user.userId, requestId);
 
     return c.json({ data }, 201);
   },

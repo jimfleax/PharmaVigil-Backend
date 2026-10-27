@@ -12,4 +12,6 @@ export const CreateDispensingAuthorizationSchema = z.object({
   }),
 });
 
-export type CreateDispensingAuthorizationInput = z.infer<typeof CreateDispensingAuthorizationSchema>;
+export type CreateDispensingAuthorizationInput = z.infer<
+  typeof CreateDispensingAuthorizationSchema
+>;

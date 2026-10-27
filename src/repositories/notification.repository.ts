@@ -37,11 +37,7 @@ export class NotificationRepository {
       query._id = { $gt: cursor };
     }
 
-    return this.collection
-      .find(query)
-      .sort({ createdAt: -1 })
-      .limit(limit)
-      .toArray();
+    return this.collection.find(query).sort({ createdAt: -1 }).limit(limit).toArray();
   }
 
   async markRead(

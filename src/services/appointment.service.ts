@@ -73,13 +73,18 @@ export class AppointmentService {
       endAt,
     });
     if (doctorConflict) {
-      throw new AppError(409, 'CONFLICT', 'Doctor already has an active appointment in this time slot', [
-        {
-          field: 'startAt',
-          code: 'DOCTOR_SLOT_CONFLICT',
-          message: 'The requested doctor has an overlapping scheduled appointment.',
-        },
-      ]);
+      throw new AppError(
+        409,
+        'CONFLICT',
+        'Doctor already has an active appointment in this time slot',
+        [
+          {
+            field: 'startAt',
+            code: 'DOCTOR_SLOT_CONFLICT',
+            message: 'The requested doctor has an overlapping scheduled appointment.',
+          },
+        ],
+      );
     }
 
     // 2. Conflict Check: Patient Overlap
@@ -89,13 +94,18 @@ export class AppointmentService {
       endAt,
     });
     if (patientConflict) {
-      throw new AppError(409, 'CONFLICT', 'Patient already has an active appointment in this time slot', [
-        {
-          field: 'startAt',
-          code: 'PATIENT_SLOT_CONFLICT',
-          message: 'The patient has an overlapping scheduled appointment.',
-        },
-      ]);
+      throw new AppError(
+        409,
+        'CONFLICT',
+        'Patient already has an active appointment in this time slot',
+        [
+          {
+            field: 'startAt',
+            code: 'PATIENT_SLOT_CONFLICT',
+            message: 'The patient has an overlapping scheduled appointment.',
+          },
+        ],
+      );
     }
 
     const appointmentId = randomUUID();
@@ -200,7 +210,9 @@ export class AppointmentService {
     );
 
     if (!updated) {
-      throw new ConflictError('Appointment version conflict. Reload and review the latest appointment.');
+      throw new ConflictError(
+        'Appointment version conflict. Reload and review the latest appointment.',
+      );
     }
 
     await this.auditRepo.append({

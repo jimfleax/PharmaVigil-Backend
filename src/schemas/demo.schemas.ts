@@ -21,4 +21,3 @@ export const SeedDemoWorkspaceSchema = z.object({
 });
 
 export type SeedDemoWorkspaceInput = z.infer<typeof SeedDemoWorkspaceSchema>;
-

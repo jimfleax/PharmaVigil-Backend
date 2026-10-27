@@ -38,11 +38,7 @@ export class PrescriptionRepository {
     if (filter.status) query.status = filter.status as PrescriptionStatus;
     if (filter.cursor) query._id = { $gt: filter.cursor };
 
-    return this.prescriptions
-      .find(query)
-      .sort({ createdAt: -1 })
-      .limit(filter.limit)
-      .toArray();
+    return this.prescriptions.find(query).sort({ createdAt: -1 }).limit(filter.limit).toArray();
   }
 
   async createRevision(
@@ -50,7 +46,10 @@ export class PrescriptionRepository {
     prescriptionId: string,
     expectedVersion: number,
     revision: PrescriptionRevisionDocument,
-  ): Promise<{ prescription: PrescriptionDocument; revision: PrescriptionRevisionDocument } | null> {
+  ): Promise<{
+    prescription: PrescriptionDocument;
+    revision: PrescriptionRevisionDocument;
+  } | null> {
     const updated = await this.prescriptions.findOneAndUpdate(
       { _id: prescriptionId, hospitalId, version: expectedVersion },
       {

@@ -37,11 +37,7 @@ export class RuleSetRepository {
       query.status = filter.status as ClinicalRuleSetDocument['status'];
     }
 
-    return this.collection
-      .find(query)
-      .sort({ createdAt: -1 })
-      .limit(filter.limit)
-      .toArray();
+    return this.collection.find(query).sort({ createdAt: -1 }).limit(filter.limit).toArray();
   }
 
   async create(doc: ClinicalRuleSetDocument): Promise<ClinicalRuleSetDocument> {

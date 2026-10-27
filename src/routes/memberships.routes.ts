@@ -23,7 +23,8 @@ membershipsRoutes.get(
   requireRole('HOSPITAL_ADMIN'),
   async (c) => {
     const membership = c.get('membership')!;
-    const status = c.req.query('status') as import('../types/index.js').MembershipStatus | undefined;
+    const status = c.req.query('status') as
+      import('../types/index.js').MembershipStatus | undefined;
     const service = new MembershipService(getDatabase());
     const data = await service.listMemberships(membership.hospitalId, status);
     return c.json({ data });
@@ -31,19 +32,14 @@ membershipsRoutes.get(
 );
 
 // API-MEM-002: POST /memberships (Request membership in another hospital)
-membershipsRoutes.post(
-  '/',
-  requireAuth,
-  zValidator('json', MembershipRequestSchema),
-  async (c) => {
-    const user = c.get('user')!;
-    const body = c.req.valid('json');
-    const requestId = c.get('requestId');
-    const service = new MembershipService(getDatabase());
-    const created = await service.requestMembership(user.userId, body, requestId);
-    return c.json({ data: created }, 201);
-  },
-);
+membershipsRoutes.post('/', requireAuth, zValidator('json', MembershipRequestSchema), async (c) => {
+  const user = c.get('user')!;
+  const body = c.req.valid('json');
+  const requestId = c.get('requestId');
+  const service = new MembershipService(getDatabase());
+  const created = await service.requestMembership(user.userId, body, requestId);
+  return c.json({ data: created }, 201);
+});
 
 // API-MEM-003: POST /memberships/:id/approve
 membershipsRoutes.post(
@@ -86,13 +82,7 @@ membershipsRoutes.post(
     const requestId = c.get('requestId');
 
     const service = new MembershipService(getDatabase());
-    await service.rejectMembership(
-      membership.hospitalId,
-      admin.userId,
-      targetId,
-      body,
-      requestId,
-    );
+    await service.rejectMembership(membership.hospitalId, admin.userId, targetId, body, requestId);
     return c.json({ message: 'Membership rejected' });
   },
 );
@@ -112,13 +102,7 @@ membershipsRoutes.post(
     const requestId = c.get('requestId');
 
     const service = new MembershipService(getDatabase());
-    await service.suspendMembership(
-      membership.hospitalId,
-      admin.userId,
-      targetId,
-      body,
-      requestId,
-    );
+    await service.suspendMembership(membership.hospitalId, admin.userId, targetId, body, requestId);
     return c.json({ message: 'Membership suspended' });
   },
 );

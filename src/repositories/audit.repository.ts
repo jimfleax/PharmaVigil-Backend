@@ -21,11 +21,7 @@ export class AuditRepository {
     if (filter.actorUserId) query.actorUserId = filter.actorUserId;
     if (filter.cursor) query._id = { $gt: filter.cursor };
 
-    return this.collection
-      .find(query)
-      .sort({ timestamp: -1 })
-      .limit(filter.limit)
-      .toArray();
+    return this.collection.find(query).sort({ timestamp: -1 }).limit(filter.limit).toArray();
   }
 
   async countByAction(hospitalId: string, action: string): Promise<number> {

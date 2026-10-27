@@ -16,29 +16,25 @@ function getService(): CatalogueService {
 }
 
 // API-MED-001: GET /medicine-catalogue/search
-catalogueRoutes.get(
-  '/search',
-  zValidator('query', CatalogueSearchQuerySchema),
-  async (c) => {
-    const membership = c.get('membership');
-    const user = c.get('user');
+catalogueRoutes.get('/search', zValidator('query', CatalogueSearchQuerySchema), async (c) => {
+  const membership = c.get('membership');
+  const user = c.get('user');
 
-    // Authentication & authorization checks
-    if (!user) {
-      throw new UnauthenticatedError('Authentication required to search catalogue.');
-    }
+  // Authentication & authorization checks
+  if (!user) {
+    throw new UnauthenticatedError('Authentication required to search catalogue.');
+  }
 
-    if (!membership || !['DOCTOR', 'PHARMACIST'].includes(membership.role)) {
-      throw new ForbiddenError('Access forbidden: Only DOCTOR or PHARMACIST may search catalogue.');
-    }
+  if (!membership || !['DOCTOR', 'PHARMACIST'].includes(membership.role)) {
+    throw new ForbiddenError('Access forbidden: Only DOCTOR or PHARMACIST may search catalogue.');
+  }
 
-    const { query, limit } = c.req.valid('query');
-    const service = getService();
-    const data = await service.search(query, limit);
+  const { query, limit } = c.req.valid('query');
+  const service = getService();
+  const data = await service.search(query, limit);
 
-    return c.json({ data });
-  },
-);
+  return c.json({ data });
+});
 
 // API-MED-002: GET /medicine-catalogue/:itemId
 catalogueRoutes.get('/:itemId', async (c) => {

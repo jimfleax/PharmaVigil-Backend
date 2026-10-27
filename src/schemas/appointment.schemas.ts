@@ -8,13 +8,10 @@ export const CreateAppointmentSchema = z
     endAt: z.string().datetime({ message: 'endAt must be a valid ISO 8601 datetime' }),
     reason: z.string().max(1000).optional(),
   })
-  .refine(
-    (data) => new Date(data.startAt).getTime() < new Date(data.endAt).getTime(),
-    {
-      message: 'startAt must be strictly before endAt',
-      path: ['endAt'],
-    },
-  );
+  .refine((data) => new Date(data.startAt).getTime() < new Date(data.endAt).getTime(), {
+    message: 'startAt must be strictly before endAt',
+    path: ['endAt'],
+  });
 
 export const ListAppointmentsQuerySchema = z.object({
   from: z.string().datetime().optional(),

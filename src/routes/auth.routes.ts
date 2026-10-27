@@ -5,10 +5,7 @@ import { getDatabase } from '../config/db.js';
 import { env } from '../config/env.js';
 import { AuthService } from '../services/auth.service.js';
 import { MembershipRepository } from '../repositories/membership.repository.js';
-import {
-  RegisterRequestSchema,
-  LoginRequestSchema,
-} from '../schemas/auth.schemas.js';
+import { RegisterRequestSchema, LoginRequestSchema } from '../schemas/auth.schemas.js';
 import { requireAuth } from '../middleware/require-auth.js';
 
 export const authRoutes = new Hono<{ Variables: AppVariables }>();

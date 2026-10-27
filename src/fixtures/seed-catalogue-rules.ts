@@ -254,7 +254,8 @@ export const SEEDED_ILLUSTRATIVE_RULESET: ClinicalRuleSet = {
       evidenceReferences: [
         {
           sourceId: 'SRC-ILLUS-DDI-01',
-          title: 'Illustrative Guidance on Potassium-Sparing Diuretics and Potassium Supplementation',
+          title:
+            'Illustrative Guidance on Potassium-Sparing Diuretics and Potassium Supplementation',
           publisher: 'PharmaVigil Clinical Demonstration Protocol',
           url: 'https://pharmavigil.internal/rules/ddi-001',
           locator: 'Section 4.1',
@@ -263,7 +264,10 @@ export const SEEDED_ILLUSTRATIVE_RULESET: ClinicalRuleSet = {
           evidenceStrength: 'HIGH',
         },
       ],
-      limitations: ['Illustrative demonstration fixture only', 'Not independently clinically validated'],
+      limitations: [
+        'Illustrative demonstration fixture only',
+        'Not independently clinically validated',
+      ],
     },
 
     // 2. Warfarin + Aspirin (Major Hemorrhage Risk)
@@ -292,7 +296,10 @@ export const SEEDED_ILLUSTRATIVE_RULESET: ClinicalRuleSet = {
           evidenceStrength: 'HIGH',
         },
       ],
-      limitations: ['Illustrative demonstration fixture only', 'Not independently clinically validated'],
+      limitations: [
+        'Illustrative demonstration fixture only',
+        'Not independently clinically validated',
+      ],
     },
 
     // 3. Ramipril + Spironolactone (Hyperkalemia / Hypotension)
@@ -321,7 +328,10 @@ export const SEEDED_ILLUSTRATIVE_RULESET: ClinicalRuleSet = {
           evidenceStrength: 'MODERATE',
         },
       ],
-      limitations: ['Illustrative demonstration fixture only', 'Not independently clinically validated'],
+      limitations: [
+        'Illustrative demonstration fixture only',
+        'Not independently clinically validated',
+      ],
     },
 
     // 4. Amoxicillin in Penicillin-Allergic Patient (Anaphylaxis Risk)
@@ -349,7 +359,10 @@ export const SEEDED_ILLUSTRATIVE_RULESET: ClinicalRuleSet = {
           evidenceStrength: 'HIGH',
         },
       ],
-      limitations: ['Illustrative demonstration fixture only', 'Not independently clinically validated'],
+      limitations: [
+        'Illustrative demonstration fixture only',
+        'Not independently clinically validated',
+      ],
     },
 
     // 5. Warfarin + Cranberry Juice / High Vitamin K (Food-Drug Interaction)
@@ -377,7 +390,10 @@ export const SEEDED_ILLUSTRATIVE_RULESET: ClinicalRuleSet = {
           evidenceStrength: 'MODERATE',
         },
       ],
-      limitations: ['Illustrative demonstration fixture only', 'Not independently clinically validated'],
+      limitations: [
+        'Illustrative demonstration fixture only',
+        'Not independently clinically validated',
+      ],
     },
 
     // 6. Ramipril + High Potassium Salt Substitutes
@@ -405,7 +421,10 @@ export const SEEDED_ILLUSTRATIVE_RULESET: ClinicalRuleSet = {
           evidenceStrength: 'MODERATE',
         },
       ],
-      limitations: ['Illustrative demonstration fixture only', 'Not independently clinically validated'],
+      limitations: [
+        'Illustrative demonstration fixture only',
+        'Not independently clinically validated',
+      ],
     },
 
     // 7. Ramipril + Prior ACE-Inhibitor Angioedema / Cough (Adverse Reaction History)
@@ -433,7 +452,10 @@ export const SEEDED_ILLUSTRATIVE_RULESET: ClinicalRuleSet = {
           evidenceStrength: 'HIGH',
         },
       ],
-      limitations: ['Illustrative demonstration fixture only', 'Not independently clinically validated'],
+      limitations: [
+        'Illustrative demonstration fixture only',
+        'Not independently clinically validated',
+      ],
     },
   ],
 };
@@ -441,26 +463,21 @@ export const SEEDED_ILLUSTRATIVE_RULESET: ClinicalRuleSet = {
 export async function seedCatalogueAndRules(db: Db): Promise<void> {
   const catalogueColl = db.collection<MedicationCatalogItem>('medication_catalog');
   for (const item of SYNTHETIC_CATALOGUE_ITEMS) {
-    await catalogueColl.updateOne(
-      { _id: item._id },
-      { $set: item },
-      { upsert: true },
-    );
+    await catalogueColl.updateOne({ _id: item._id }, { $set: item }, { upsert: true });
   }
 
   // Also maintain backward compatibility for medication_catalogue if referenced
   const legacyColl = db.collection<MedicationCatalogItem>('medication_catalogue');
   for (const item of SYNTHETIC_CATALOGUE_ITEMS) {
-    await legacyColl.updateOne(
-      { _id: item._id },
-      { $set: item },
-      { upsert: true },
-    );
+    await legacyColl.updateOne({ _id: item._id }, { $set: item }, { upsert: true });
   }
 
   const rulesColl = db.collection<ClinicalRuleSet>('rule_sets');
   await rulesColl.updateOne(
-    { ruleSetId: SEEDED_ILLUSTRATIVE_RULESET.ruleSetId, version: SEEDED_ILLUSTRATIVE_RULESET.version },
+    {
+      ruleSetId: SEEDED_ILLUSTRATIVE_RULESET.ruleSetId,
+      version: SEEDED_ILLUSTRATIVE_RULESET.version,
+    },
     { $set: SEEDED_ILLUSTRATIVE_RULESET },
     { upsert: true },
   );

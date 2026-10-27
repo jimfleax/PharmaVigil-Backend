@@ -11,10 +11,7 @@ import {
   ConflictError,
   ForbiddenError,
 } from '../middleware/error-handler.js';
-import type {
-  DispensingAuthorizationDocument,
-  UserRole,
-} from '../types/index.js';
+import type { DispensingAuthorizationDocument, UserRole } from '../types/index.js';
 
 export class DispensingService {
   private dispensingRepo: DispensingRepository;
