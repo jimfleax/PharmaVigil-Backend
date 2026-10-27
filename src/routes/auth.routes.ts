@@ -4,6 +4,7 @@ import type { AppVariables } from '../types/index.js';
 import { getDatabase } from '../config/db.js';
 import { env } from '../config/env.js';
 import { AuthService } from '../services/auth.service.js';
+import { MembershipRepository } from '../repositories/membership.repository.js';
 import {
   RegisterRequestSchema,
   LoginRequestSchema,
@@ -55,9 +56,27 @@ authRoutes.post('/login', zValidator('json', LoginRequestSchema), async (c) => {
 
 // API-AUTH-003: GET /auth/me
 authRoutes.get('/me', requireAuth, async (c) => {
-  const user = c.get('user');
+  const user = c.get('user')!;
   const membership = c.get('membership');
-  return c.json({ user, membership });
+  const membershipRepo = new MembershipRepository(getDatabase());
+  const memberships = await membershipRepo.listByUser(user.userId);
+  return c.json({
+    user: {
+      id: user.userId,
+      email: user.email,
+      displayName: user.displayName,
+      accountStatus: user.accountStatus,
+    },
+    memberships: memberships.map((m) => ({
+      id: m._id,
+      hospitalId: m.hospitalId,
+      requestedRole: m.requestedRole,
+      assignedRole: m.assignedRole,
+      status: m.status,
+      version: m.version,
+    })),
+    membership,
+  });
 });
 
 // API-AUTH-004: POST /auth/logout
