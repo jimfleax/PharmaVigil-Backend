@@ -22,3 +22,33 @@ patientMeRoutes.get(
     return c.json(patient);
   },
 );
+
+// API-PAT-005: GET /patient/me/prescriptions
+patientMeRoutes.get(
+  '/prescriptions',
+  requireAuth,
+  requireMembership,
+  requireRole('PATIENT'),
+  async (c) => {
+    const user = c.get('user')!;
+    const membership = c.get('membership')!;
+    const service = new PatientService(getDatabase());
+    const data = await service.getOwnPrescriptions(membership.hospitalId, user.userId);
+    return c.json({ data });
+  },
+);
+
+// API-PAT-006: GET /patient/me/history
+patientMeRoutes.get(
+  '/history',
+  requireAuth,
+  requireMembership,
+  requireRole('PATIENT'),
+  async (c) => {
+    const user = c.get('user')!;
+    const membership = c.get('membership')!;
+    const service = new PatientService(getDatabase());
+    const data = await service.getOwnHistory(membership.hospitalId, user.userId);
+    return c.json({ data });
+  },
+);

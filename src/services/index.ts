@@ -9,3 +9,7 @@ export * from './alert.service.js';
 export * from './dispensing.service.js';
 export * from './audit.service.js';
 export * from './demo.service.js';
+export * from './notification.service.js';
+export * from './medication-order.service.js';
+export * from './appointment.service.js';
+export * from './rule-governance.service.js';

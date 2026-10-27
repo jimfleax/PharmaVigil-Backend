@@ -51,6 +51,10 @@ export class DemoService {
       'alert_dispositions',
       'dispensing_authorizations',
       'idempotency_records',
+      'notifications',
+      'medication_orders',
+      'medication_order_versions',
+      'appointments',
     ];
 
     for (const collName of operationalCollections) {

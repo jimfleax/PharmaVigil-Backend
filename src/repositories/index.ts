@@ -13,3 +13,7 @@ export * from './alert.repository.js';
 export * from './dispensing.repository.js';
 export * from './idempotency.repository.js';
 export * from './audit.repository.js';
+export * from './notification.repository.js';
+export * from './medication-order.repository.js';
+export * from './appointment.repository.js';
+export * from './rule-set.repository.js';

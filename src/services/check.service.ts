@@ -6,6 +6,8 @@ import { AllergyRepository } from '../repositories/allergy.repository.js';
 import { MedicationHistoryRepository } from '../repositories/medication-history.repository.js';
 import { AlertRepository } from '../repositories/alert.repository.js';
 import { AuditRepository } from '../repositories/audit.repository.js';
+import { MedicationOrderRepository } from '../repositories/medication-order.repository.js';
+import { NotificationService } from './notification.service.js';
 import { evaluateClinicalRules } from '../domain/rule-engine/evaluator.js';
 import { SEEDED_ILLUSTRATIVE_RULESET } from '../fixtures/seed-catalogue-rules.js';
 import { NotFoundError } from '../middleware/error-handler.js';
@@ -29,7 +31,7 @@ export class CheckService {
   private alertRepo: AlertRepository;
   private auditRepo: AuditRepository;
 
-  constructor(db: Db) {
+  constructor(private db: Db) {
     this.checkRepo = new CheckRepository(db);
     this.rxRepo = new PrescriptionRepository(db);
     this.allergyRepo = new AllergyRepository(db);
@@ -47,6 +49,7 @@ export class CheckService {
     requestId: string,
   ) {
     let patientId = '';
+    let targetDoctorUserId: string | null = null;
     let subjectItems: PrescribedSubjectItem[] = [];
 
     if (subjectType === 'PRESCRIPTION_REVISION') {
@@ -59,8 +62,34 @@ export class CheckService {
         throw new NotFoundError('Prescription not found');
       }
       patientId = prescription.patientId;
+      targetDoctorUserId = prescription.prescriberUserId;
 
       subjectItems = revision.items.map((item, idx) => ({
+        itemId: `item-${idx + 1}`,
+        catalogueId: item.catalogueItemId || undefined,
+        canonicalIngredientIds: item.canonicalIngredientIds || [],
+        matchStatus: item.matchStatus,
+        brandText: item.brandText || undefined,
+        strength:
+          item.strengthValue && item.strengthUnit
+            ? { value: item.strengthValue, unit: item.strengthUnit }
+            : undefined,
+        dosageForm: item.dosageForm || undefined,
+      }));
+    } else if (subjectType === 'MEDICATION_ORDER_VERSION') {
+      const orderRepo = new MedicationOrderRepository(this.db);
+      const version = await orderRepo.findVersionById(hospitalId, subjectId);
+      if (!version) {
+        throw new NotFoundError('Medication order version not found');
+      }
+      const order = await orderRepo.findById(hospitalId, version.orderId);
+      if (!order) {
+        throw new NotFoundError('Medication order not found');
+      }
+      patientId = order.patientId;
+      targetDoctorUserId = order.orderingDoctorId;
+
+      subjectItems = version.items.map((item, idx) => ({
         itemId: `item-${idx + 1}`,
         catalogueId: item.catalogueItemId || undefined,
         canonicalIngredientIds: item.canonicalIngredientIds || [],
@@ -173,6 +202,24 @@ export class CheckService {
             'DOCTOR_REVIEW_REQUIRED',
           );
         }
+      } else if (subjectType === 'MEDICATION_ORDER_VERSION') {
+        const orderRepo = new MedicationOrderRepository(this.db);
+        await orderRepo.linkCheckRun(hospitalId, subjectId, checkRunId);
+      }
+
+      // Dispatch in-app notification to prescribing/ordering doctor
+      if (targetDoctorUserId) {
+        const notifService = new NotificationService(this.db);
+        await notifService.dispatchNotification(
+          hospitalId,
+          targetDoctorUserId,
+          subjectType === 'PRESCRIPTION_REVISION'
+            ? 'PRESCRIPTION_ALERT_FLAGGED'
+            : 'MEDICATION_ORDER_ALERT_FLAGGED',
+          checkRunId,
+          'Clinical Hazard Alert Flagged',
+          `Clinical check run flagged ${alertDocs.length} potential hazard(s) requiring review.`,
+        );
       }
     }
 
@@ -246,6 +293,10 @@ function formatCheckEnvelope(check: CheckRunDocument, alerts: AlertDocument[]) {
     outcome: check.outcome,
     ruleSetVersion: check.ruleSetVersion,
     coverageByCategory: check.coverageByCategory,
+    alertIds: check.alertIds ?? alerts.map((a) => a._id),
+    subjectType: check.subjectType,
+    subjectId: check.subjectId,
+    subjectVersion: check.subjectVersion,
     alerts: alerts.map((a) => ({
       id: a._id,
       _id: a._id,
@@ -260,8 +311,6 @@ function formatCheckEnvelope(check: CheckRunDocument, alerts: AlertDocument[]) {
       version: a.version,
     })),
     limitations: check.limitations,
-    subjectId: check.subjectId,
-    subjectVersion: check.subjectVersion,
     requestId: check.requestId,
     createdAt: check.createdAt.toISOString(),
   };

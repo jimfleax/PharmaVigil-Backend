@@ -8,3 +8,7 @@ export * from './check.schemas.js';
 export * from './alert.schemas.js';
 export * from './dispensing.schemas.js';
 export * from './demo.schemas.js';
+export * from './notification.schemas.js';
+export * from './order.schemas.js';
+export * from './appointment.schemas.js';
+export * from './rule-set.schemas.js';

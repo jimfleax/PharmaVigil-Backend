@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto';
 import type { Db } from 'mongodb';
 import { AlertRepository } from '../repositories/alert.repository.js';
 import { AuditRepository } from '../repositories/audit.repository.js';
+import { MembershipRepository } from '../repositories/membership.repository.js';
+import { NotificationService } from './notification.service.js';
 import {
   NotFoundError,
   ValidationError,
@@ -18,7 +20,7 @@ export class AlertService {
   private alertRepo: AlertRepository;
   private auditRepo: AuditRepository;
 
-  constructor(db: Db) {
+  constructor(private db: Db) {
     this.alertRepo = new AlertRepository(db);
     this.auditRepo = new AuditRepository(db);
   }
@@ -155,6 +157,28 @@ export class AlertService {
         dispositionType,
       },
     });
+
+    // In-app notification to active pharmacists
+    try {
+      const membershipRepo = new MembershipRepository(this.db);
+      const activeMembers = await membershipRepo.listByHospital(hospitalId, { status: 'ACTIVE' });
+      const pharmacists = activeMembers.filter((m) => m.assignedRole === 'PHARMACIST');
+      if (pharmacists.length > 0) {
+        const notifService = new NotificationService(this.db);
+        await notifService.dispatchMany(
+          pharmacists.map((p) => ({
+            hospitalId,
+            recipientUserId: p.userId,
+            type: 'ALERT_DISPOSITION_RECORDED' as const,
+            subjectId: alertId,
+            title: 'Alert Disposition Recorded',
+            message: `Doctor recorded disposition ${dispositionType}: "${rationale.trim()}"`,
+          })),
+        );
+      }
+    } catch (err) {
+      console.warn('Failed to dispatch alert disposition notification:', err);
+    }
 
     return formatAlert(updated);
   }

@@ -26,6 +26,7 @@ import { appointmentsRoutes } from './routes/appointments.routes.js';
 import { notificationsRoutes } from './routes/notifications.routes.js';
 import { auditRoutes } from './routes/audit.routes.js';
 import { demoRoutes } from './routes/demo.routes.js';
+import { rulesRoutes } from './routes/rules.routes.js';
 
 export function createApp(): Hono<{ Variables: AppVariables }> {
   const app = new Hono<{ Variables: AppVariables }>();
@@ -90,6 +91,7 @@ export function createApp(): Hono<{ Variables: AppVariables }> {
   apiV1.route('/audit', auditRoutes);
   apiV1.route('/audit-events', auditRoutes); // Dual mount for OpenAPI 3.1.0 conformance
   apiV1.route('/demo', demoRoutes);
+  apiV1.route('/rule-sets', rulesRoutes);
 
   // Mount API v1 under root
   app.route('/api/v1', apiV1);

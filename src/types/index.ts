@@ -1,5 +1,5 @@
 import type { Context } from 'hono';
-import type { CoverageCategory, EvidenceReference } from '../domain/rule-engine/types.js';
+import type { CoverageCategory, EvidenceReference, ClinicalRule } from '../domain/rule-engine/types.js';
 
 export type UserRole = 'PATIENT' | 'DOCTOR' | 'PHARMACIST' | 'HOSPITAL_ADMIN';
 export type MembershipStatus = 'PENDING' | 'ACTIVE' | 'REJECTED' | 'SUSPENDED' | 'REVOKED';
@@ -354,4 +354,113 @@ export interface AuditEventDocument {
   afterVersion?: number | undefined;
   reason?: string | undefined;
   metadata?: Record<string, unknown> | undefined;
+}
+
+
+// --- Phase 5 Supporting Modules Types ---
+
+// 1. In-App Notifications
+export type NotificationType =
+  | 'PRESCRIPTION_ALERT_FLAGGED'
+  | 'MEDICATION_ORDER_ALERT_FLAGGED'
+  | 'ALERT_DISPOSITION_RECORDED'
+  | 'APPOINTMENT_BOOKED'
+  | 'APPOINTMENT_CANCELLED';
+
+export interface NotificationDocument {
+  _id: string;
+  hospitalId: string;
+  recipientUserId: string;
+  type: NotificationType;
+  subjectId: string;
+  title: string;
+  message: string;
+  read: boolean;
+  readAt?: Date | null | undefined;
+  createdAt: Date;
+  version: number;
+}
+
+// 2. Inpatient Medication Orders
+export type MedicationOrderStatus = 'ACTIVE' | 'DISCONTINUED' | 'CANCELLED';
+
+export interface MedicationOrderDocument {
+  _id: string;
+  hospitalId: string;
+  patientId: string;
+  orderingDoctorId: string;
+  currentVersionId: string;
+  currentVersionNumber: number;
+  status: MedicationOrderStatus;
+  notes?: string | null | undefined;
+  discontinuationReason?: string | null | undefined;
+  createdAt: Date;
+  updatedAt: Date;
+  version: number;
+}
+
+export interface MedicationOrderVersionDocument {
+  _id: string;
+  hospitalId: string;
+  orderId: string;
+  versionNumber: number;
+  supersedesVersionId?: string | null | undefined;
+  items: PrescriptionItemModel[];
+  changeReason?: string | null | undefined;
+  checkRunId?: string | null | undefined;
+  createdBy: string;
+  createdAt: Date;
+  version: number;
+}
+
+// 3. Appointments
+export type AppointmentStatus = 'BOOKED' | 'CANCELLED' | 'COMPLETED';
+
+export interface AppointmentDocument {
+  _id: string;
+  hospitalId: string;
+  patientId: string;
+  doctorUserId: string;
+  startAt: Date;
+  endAt: Date;
+  status: AppointmentStatus;
+  reason?: string | null | undefined;
+  cancelledBy?: string | null | undefined;
+  cancellationReason?: string | null | undefined;
+  cancelledAt?: Date | null | undefined;
+  bookedBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+  version: number;
+}
+
+// 4. Clinical Rule Governance
+export interface ClinicalRuleSetDocument {
+  _id: string;
+  ruleSetId: string;
+  version: string;
+  description: string;
+  status: 'DRAFT' | 'IN_REVIEW' | 'APPROVED' | 'PUBLISHED' | 'RETIRED' | 'ILLUSTRATIVE_NOT_VALIDATED';
+  rules: ClinicalRule[];
+  limitations: string[];
+  authorUserId: string;
+  reviewerUserId?: string | null | undefined;
+  reviewRationale?: string | null | undefined;
+  reviewedAt?: Date | null | undefined;
+  publisherUserId?: string | null | undefined;
+  publishedAt?: Date | null | undefined;
+  isClinicallyValidated: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface RuleSetMetadata {
+  ruleSetId: string;
+  version: string;
+  description: string;
+  status: string;
+  ruleCount: number;
+  isClinicallyValidated: boolean;
+  limitations: string[];
+  publishedAt?: string | undefined;
 }
